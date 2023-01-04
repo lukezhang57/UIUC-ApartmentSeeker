@@ -31,11 +31,11 @@ ApartmentSeeker is a social networking platform where thousands of students can 
 ## Getting Started
 After cloning the repo with
 ```
-git clone https://github.com/CS222SP22/course-project-tqk-b.git
+git clone https://github.com/lukezhang57/UIUC-ApartmentSeeker
 ```
 change directory to the folder with
 ```
-cd course-project-tqk-b
+cd UIUC-ApartmentSeeker
 ```
 
 
