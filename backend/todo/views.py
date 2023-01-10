@@ -157,6 +157,7 @@ def get_nearest_apartments(request):
     """
     building_slugs = json.loads(request.query_params["buildingSlugs"])
     university_slug = request.query_params["universitySlug"]
+    min_walking_dist = 1
     try:
         university = University.objects.get(university_slug=university_slug)
         apartments = set(university.apartments.all())
@@ -165,9 +166,18 @@ def get_nearest_apartments(request):
 
     for slug in building_slugs:
         try:
+            new_apartments = set()
             building = ImportantBuilding.objects.get(building_slug=slug)
-            apartments = apartments & set(building.nearby_apartments.all())
-            # print("Apartments now = ", apartments)
+            for apartment in apartments:
+                dist_val = building.address.dist(apartment.address)
+                print(dist_val)
+                if dist_val <= min_walking_dist:
+                    # If the distance from apartment to building is within the p
+                    new_apartments.add(apartment)
+
+            # apartments = apartments & set(building.nearby_apartments.all())
+            if len(new_apartments) < len(apartments):
+                apartments = new_apartments
             # QuerySets follow the set relation, and to get nearby apartments to each building However, I noticed that
             # the AND operator creates copies of the models, which means that if we use the AND operator again It will
             # give an empty set as although our contents may be similar, the data is stored in different memory addresses
