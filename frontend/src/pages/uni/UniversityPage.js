@@ -196,7 +196,7 @@ const University = () => {
                     const getData = async () => {
                       try {
                         const res = await axios.get(
-                          `http://localhost:8000/api/get_nearest_apartments?universitySlug=${uni_slug}&buildingSlugs=${string}&starting_index=${0}&ending_index=${50}`
+                          `http://localhost:8000/api/get_nearest_apartments?universitySlug=${uni_slug}&buildingSlugs=${string}&starting_index=${0}&ending_index=${50}&minWalkingDist=${1}`
                         )
                         console.log('received: ' ,res.data)
                         setUni(res.data)

@@ -157,7 +157,7 @@ def get_nearest_apartments(request):
     """
     building_slugs = json.loads(request.query_params["buildingSlugs"])
     university_slug = request.query_params["universitySlug"]
-    min_walking_dist = 1
+    min_walking_dist = int(request.query_params["minWalkingDist"])
     try:
         university = University.objects.get(university_slug=university_slug)
         apartments = set(university.apartments.all())
@@ -170,7 +170,6 @@ def get_nearest_apartments(request):
             building = ImportantBuilding.objects.get(building_slug=slug)
             for apartment in apartments:
                 dist_val = building.address.dist(apartment.address)
-                print(dist_val)
                 if dist_val <= min_walking_dist:
                     # If the distance from apartment to building is within the p
                     new_apartments.add(apartment)
