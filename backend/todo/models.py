@@ -9,6 +9,7 @@ import numpy as np
 from django.contrib.auth.hashers import *
 import ssl
 from haversine import haversine, Unit
+import openrouteservice
 
 geolocator = Nominatim(user_agent="geoapiExercises")
 
@@ -123,7 +124,79 @@ class Address(models.Model):
         except ValueError:
             return np.nan
 
-        # NOTE: Djongo causes some issues for nor indicating fields as null (hence why long and lat have null=true)
+    def get_walking_dist(self, another_addr):
+        """
+        This takes another address and computes the distance between the two addresses.
+        Used for finding nearest apartments near a building
+        :param another_addr:
+        :return:
+        """
+        client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        try:
+            add1 =  self.long.to_decimal(),self.lat.to_decimal()
+            add2 = (another_addr.long.to_decimal(),another_addr.lat.to_decimal())
+        except AttributeError:
+            add1 = (float(self.long), float(self.lat))
+            add2 = (float(another_addr.long), float(another_addr.lat))
+        coords = (add1,add2)
+        walking_directions = client.directions(coords, units="mi", profile='foot-walking')
+        distance = walking_directions['routes'][0]['summary']['distance']
+        try:
+            return distance
+            # Calculate distance between two points with haversine.
+            # Originally used Geopy to calculate distance but currently having SSL certificate errors at the moment.
+        except ValueError:
+            return np.nan
+
+    def get_biking_dist(self, another_addr):
+        """
+        This takes another address and computes the distance between the two addresses.
+        Used for finding nearest apartments near a building
+        :param another_addr:
+        :return:
+        """
+        client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        try:
+            add1 =  self.long.to_decimal(),self.lat.to_decimal()
+            add2 = (another_addr.long.to_decimal(),another_addr.lat.to_decimal())
+        except AttributeError:
+            add1 = (float(self.long), float(self.lat))
+            add2 = (float(another_addr.long), float(another_addr.lat))
+        coords = (add1,add2)
+        biking_directions = client.directions(coords, units="mi", profile='cycling-regular')
+        distance = biking_directions['routes'][0]['summary']['distance']
+        try:
+            return distance
+            # Calculate distance between two points with haversine.
+            # Originally used Geopy to calculate distance but currently having SSL certificate errors at the moment.
+        except ValueError:
+            return np.nan
+
+    def get_driving_dist(self, another_addr):
+        """
+        This takes another address and computes the distance between the two addresses.
+        Used for finding nearest apartments near a building
+        :param another_addr:
+        :return:
+        """
+        client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        try:
+            add1 =  self.long.to_decimal(),self.lat.to_decimal()
+            add2 = (another_addr.long.to_decimal(),another_addr.lat.to_decimal())
+        except AttributeError:
+            add1 = (float(self.long), float(self.lat))
+            add2 = (float(another_addr.long), float(another_addr.lat))
+        coords = (add1,add2)
+        driving_directions = client.directions(coords, units="mi", profile='driving-car')
+        distance = driving_directions['routes'][0]['summary']['distance']
+        try:
+            return distance
+            # Calculate distance between two points with haversine.
+            # Originally used Geopy to calculate distance but currently having SSL certificate errors at the moment.
+        except ValueError:
+            return np.nan
+
+    # NOTE: Djongo causes some issues for nor indicating fields as null (hence why long and lat have null=true)
 
     def save(self, *args, **kwargs):
         """
@@ -261,7 +334,6 @@ class University(models.Model):
                 print(self.university_slug)
 
         super().save(*args, **kwargs)
-
 
 class ApartmentReview(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)

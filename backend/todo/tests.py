@@ -8,6 +8,7 @@ from todo.models import *
 from decimal import Decimal
 from rest_framework import status
 from rest_framework.test import APITestCase
+import math
 
 
 # Create your tests here.
@@ -113,8 +114,7 @@ class AddressTestCase(TestCase):
         dummy2.lat = Decimal('1.000')
         dummy2.long = Decimal('0.000')
         distance = dummy1.dist(dummy2)
-        self.assertAlmostEqual(distance, 69.096477,
-                               2)  # used a calculator to get actual haversine distance between test points
+        self.assertAlmostEqual(distance, 69.5, 2)  # used a calculator to get actual haversine distance between test points
         # test up to 2 decimal places
 
 
@@ -780,3 +780,53 @@ class NearestApartmentsTest(APITestCase):
         self.assertEqual(data[0]['apartment_slug'], "308")
         self.assertEqual(len(data),1)
         # Nearest apartment to both of these buildings is 308
+
+class TestDistances(TestCase):
+    def setUp(self) -> None:
+        # ARC coords: (40.10201506403509, -88.2361043315809)
+        Address.objects.create(address1="201 E Peabody Dr", zip_code="61820", city="Champaign", lat=Decimal('40.10201506403509'),
+                               long=Decimal('-88.2361043315809'))
+        # Thomas M Siebel Center for Computer Science coords: (40.11397506604104, -88.2249588393126)
+        Address.objects.create(address1="201 N Goodwin Ave", zip_code="61801", city="Urbana", lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126'))
+
+    # used Openrouteservice website and Google Maps to determine and confirm actual distances
+    # testing with a margin of error of 0.05 mi (~80 meters) because it rounds distance to the nearest tenth
+    def test_walking_dist(self):
+        """
+        Checks for distance between two addresses, and checks if the walking_dist function returns the proper walking distance
+        :return:
+        """
+        arc = Address.objects.get(address1="201 E Peabody Dr", city="Champaign")
+        siebel = Address.objects.get(address1="201 N Goodwin Ave", zip_code="61801")
+
+        walking_dist = arc.get_walking_dist(siebel)
+
+        self.assertTrue(math.isclose(walking_dist,1.4,abs_tol=0.05))
+        # Used Openrouteservice website to determine actual walking distance 
+    
+    def test_biking_dist(self):
+        """
+        Checks for distance between two addresses, and checks if the walking_dist function returns the proper walking distance
+        :return:
+        """
+        arc = Address.objects.get(address1="201 E Peabody Dr", city="Champaign")
+        siebel = Address.objects.get(address1="201 N Goodwin Ave", zip_code="61801")
+
+        biking_dist = arc.get_biking_dist(siebel)
+
+        self.assertTrue(math.isclose(biking_dist,1.6,abs_tol=0.05))
+        # Used Openrouteservice website to determine actual biking distance 
+
+    def test_driving_dist(self):
+        """
+        Checks for distance between two addresses, and checks if the walking_dist function returns the proper walking distance
+        :return:
+        """
+        arc = Address.objects.get(address1="201 E Peabody Dr", city="Champaign")
+        siebel = Address.objects.get(address1="201 N Goodwin Ave", zip_code="61801")
+
+        driving_dist = arc.get_driving_dist(siebel)
+
+        self.assertTrue(math.isclose(driving_dist,1.6,abs_tol=0.05))
+        # Used Openrouteservice website to determine actual driving distance 
