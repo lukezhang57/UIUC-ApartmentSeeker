@@ -115,8 +115,6 @@ class Address(models.Model):
         except AttributeError:
             add1 = (float(self.lat), float(self.long))
             add2 = (float(another_addr.lat), float(another_addr.long))
-        print(add1)
-        print(add2)
         try:
             return haversine(add1, add2, unit=Unit.MILES)
             # Calculate distance between two points with haversine.
@@ -126,8 +124,8 @@ class Address(models.Model):
 
     def get_walking_dist(self, another_addr):
         """
-        This takes another address and computes the distance between the two addresses.
-        Used for finding nearest apartments near a building
+        This takes another address and computes the walking distance between the two addresses.
+        Used for finding nearest apartments from a building
         :param another_addr:
         :return:
         """
@@ -140,13 +138,15 @@ class Address(models.Model):
             add2 = (float(another_addr.long), float(another_addr.lat))
         coords = (add1,add2)
         walking_directions = client.directions(coords, units="mi", profile='foot-walking')
-        distance = walking_directions['routes'][0]['summary']['distance']
         try:
+            distance = walking_directions['routes'][0]['summary']['distance']
             return distance
             # Calculate distance between two points with haversine.
             # Originally used Geopy to calculate distance but currently having SSL certificate errors at the moment.
         except ValueError:
             return np.nan
+        except KeyError:
+            return 0
 
     def get_biking_dist(self, another_addr):
         """
@@ -164,13 +164,15 @@ class Address(models.Model):
             add2 = (float(another_addr.long), float(another_addr.lat))
         coords = (add1,add2)
         biking_directions = client.directions(coords, units="mi", profile='cycling-regular')
-        distance = biking_directions['routes'][0]['summary']['distance']
         try:
+            distance = biking_directions['routes'][0]['summary']['distance']
             return distance
             # Calculate distance between two points with haversine.
             # Originally used Geopy to calculate distance but currently having SSL certificate errors at the moment.
         except ValueError:
             return np.nan
+        except KeyError:
+            return 0
 
     def get_driving_dist(self, another_addr):
         """
@@ -188,13 +190,15 @@ class Address(models.Model):
             add2 = (float(another_addr.long), float(another_addr.lat))
         coords = (add1,add2)
         driving_directions = client.directions(coords, units="mi", profile='driving-car')
-        distance = driving_directions['routes'][0]['summary']['distance']
         try:
+            distance = driving_directions['routes'][0]['summary']['distance']
             return distance
             # Calculate distance between two points with haversine.
             # Originally used Geopy to calculate distance but currently having SSL certificate errors at the moment.
         except ValueError:
             return np.nan
+        except KeyError:
+            return 0
 
     # NOTE: Djongo causes some issues for nor indicating fields as null (hence why long and lat have null=true)
 
