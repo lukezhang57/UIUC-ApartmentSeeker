@@ -157,32 +157,71 @@ def get_nearest_apartments(request):
     """
     building_slugs = json.loads(request.query_params["buildingSlugs"])
     university_slug = request.query_params["universitySlug"]
-    min_walking_dist = int(request.query_params["minWalkingDist"])
+    min_walking_dist = request.query_params.get("minWalkingDist")
+    min_walking_dist = float(min_walking_dist) if min_walking_dist else -1
+
+    min_biking_dist = request.query_params.get("minBikingDist")
+    min_biking_dist = float(min_biking_dist) if min_biking_dist else -1
+
+    min_driving_dist = request.query_params.get("minDrivingDist")
+    min_driving_dist = float(min_driving_dist) if min_driving_dist else -1
+
     try:
         university = University.objects.get(university_slug=university_slug)
-        apartments = set(university.apartments.all())
+        walking_apartments = biking_apartments = driving_apartments = set(university.apartments.all())
     except University.DoesNotExist:
-        apartments = set(Apartment.objects.all())
+        walking_apartments = biking_apartments = driving_apartments = set(Apartment.objects.all())
 
     for slug in building_slugs:
         try:
-            new_apartments = set()
+            new_walking_apartments = set()
             building = ImportantBuilding.objects.get(building_slug=slug)
-            for apartment in apartments:
-                dist_val = building.address.dist(apartment.address)
-                if dist_val <= min_walking_dist:
-                    # If the distance from apartment to building is within the p
-                    new_apartments.add(apartment)
+            if min_walking_dist != -1:
+                for apartment in walking_apartments:
+                    dist_val = building.address.dist(apartment.address)
+                    if dist_val <= min_walking_dist:
+                        actual_walk_dist = building.address.get_walking_dist(apartment.address)
+                        if actual_walk_dist <= min_walking_dist:
+                            new_walking_apartments.add(apartment)
 
             # apartments = apartments & set(building.nearby_apartments.all())
-            if len(new_apartments) < len(apartments):
-                apartments = new_apartments
+            if len(new_walking_apartments) < len(walking_apartments):
+                walking_apartments = new_walking_apartments
+
+            new_biking_apartments = set()
+
+            if min_biking_dist != -1:
+                for apartment in biking_apartments:
+                    dist_val = building.address.dist(apartment.address)
+                    if dist_val <= min_biking_dist:
+                        actual_bike_dist = building.address.get_biking_dist(apartment.address)
+                        if actual_bike_dist <= min_biking_dist:
+                            new_biking_apartments.add(apartment)
+            
+            if len(new_biking_apartments) < len(biking_apartments):
+                biking_apartments = new_biking_apartments
+
+            new_driving_apartments = set()
+            if min_driving_dist != -1:
+                for apartment in driving_apartments:
+                    dist_val = building.address.dist(apartment.address)
+                    if dist_val <= min_driving_dist:
+                        actual_drive_dist = building.address.get_biking_dist(apartment.address)
+                        if actual_drive_dist <= min_driving_dist:
+                            new_driving_apartments.add(apartment)
+            
+            if len(new_driving_apartments) < len(driving_apartments):
+                driving_apartments = new_driving_apartments
+
             # QuerySets follow the set relation, and to get nearby apartments to each building However, I noticed that
             # the AND operator creates copies of the models, which means that if we use the AND operator again It will
             # give an empty set as although our contents may be similar, the data is stored in different memory addresses
             # hence we are casting the QuerySets to sets, and intersection of sets doesn't create duplicates
         except ImportantBuilding.DoesNotExist:
             print("Building with slug ", slug, " does not exist")
+    
+    apartments = walking_apartments | biking_apartments | driving_apartments
+
     starting_index = max(0, min(int(request.query_params["starting_index"]), len(apartments)))
     # Adding starting index and ending index to speed up runtime on front end side
     ending_index = min(int(request.query_params["ending_index"]), len(apartments))

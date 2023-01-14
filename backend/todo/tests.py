@@ -86,7 +86,7 @@ class AddressTestCase(TestCase):
         Different addresses generally have different cities, zip codes, and or address lines (mainlyu address lines)
         :return:
         """
-        dummy1 = Address.objects.get(address1="101 E Green St", zip_code="61020", city="Champaign", lat=0, long=0)
+        dummy1 = Address.objects.get(address1="101 E Green St", zip_code="61020", city="Champaign")
         dummy2 = Address.objects.get(address1="102 E Green St", zip_code="61001")
         self.assertNotEqual(dummy1.address1, dummy2.address1)
         self.assertNotEqual(dummy1.zip_code, dummy2.zip_code)
@@ -97,7 +97,7 @@ class AddressTestCase(TestCase):
         You can have two addresses in the same city with the same zip code, but different address lines
         :return:
         """
-        dummy1 = Address.objects.get(address1="309 Green St", city="Champaign", lat=0, long=0)
+        dummy1 = Address.objects.get(address1="309 Green St", city="Champaign")
         dummy2 = Address.objects.get(address1="101 E Green St", city="Champaign")
         self.assertEqual(dummy1.city, dummy2.city)
         self.assertNotEqual(dummy1.address1, dummy2.address1)
@@ -111,10 +111,12 @@ class AddressTestCase(TestCase):
         dummy1 = Address.objects.get(address1="309 Green St", city="Champaign")
         dummy2 = Address.objects.get(address1="102 E Green St", zip_code="61001")
         # print(dummy2.lat)
+        dummy1.lat = Decimal('0.000')
+        dummy1.long = Decimal('0.000')
         dummy2.lat = Decimal('1.000')
         dummy2.long = Decimal('0.000')
         distance = dummy1.dist(dummy2)
-        self.assertAlmostEqual(distance, 69.5, 2)  # used a calculator to get actual haversine distance between test points
+        self.assertAlmostEqual(distance, 69.09, 2)  # used a calculator to get actual haversine distance between test points
         # test up to 2 decimal places
 
 
@@ -183,23 +185,6 @@ class ApartmentTestCase(TestCase):
         self.assertEqual(len(ApartmentReview.objects.all()), 3)
         self.assertEqual(review_three.review_text,
                          review.review_text)  # One person can put the same review for a different apartment
-
-
-# class SubleaseTestCase(TestCase):
-#     def setUp(self) -> None:
-#         ApartmentSublease.objects.create(
-#             associated_apartment=Apartment.objects.create(apartment_slug="309",
-#                                                           apartment_name="309 Green",
-#                                                           address=Address.objects.create(address1="309 Green St",
-#                                                                                          zip_code="61020",
-#                                                                                          city="Champaign",
-#                                                                                          lat=40.109880,
-#                                                                                          long=-88.247940),
-#                                                           min_cost=800,
-#                                                           max_cost=1000,
-#                                                           website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
-#                                                           ),
-#             tenant=User.objects.create(first_name="Test", last_name="User", user_name="test1", email="test@email.com"))
 
 
 class AuthenticationTest(APITestCase):
@@ -712,20 +697,14 @@ class NearestApartmentsTest(APITestCase):
                                               address=Address.objects.create(address1="775 S 3rd St", zip_code="61020",
                                                                              city="Champaign", lat=Decimal(40.202),
                                                                              long=Decimal(-88.235970)))
-        apartments = Apartment.objects.all()
-        for apartment in apartments:
-            b1_dist = b1.address.dist(apartment.address)
-            if b1_dist <= 1:
-                b1.nearby_apartments.add(apartment)
-            b2_dist = b2.address.dist(apartment.address)
-            if b2_dist <= 1:
-                b2.nearby_apartments.add(apartment)
         building_slugs = ['test','test2']
         starting_index = 0
         ending_index = 4
-        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC"
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
+        print("data: ", data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data[0]['apartment_slug'], "the-suite")
         self.assertEqual(data[1]['apartment_slug'], "suite-life")
@@ -749,37 +728,837 @@ class NearestApartmentsTest(APITestCase):
                                                                 long=Decimal(-88.247940)))
         b2 = ImportantBuilding.objects.create(building_slug="test2",
                                               building_name="The test 2",
-                                              address=Address.objects.create(address1="308 Green St", zip_code="61020",
+                                              address=Address.objects.create(address1="341 Green St", zip_code="61020",
                                                                 city="Champaign", lat=Decimal(40.13),
                                                                 long=Decimal(-88.247940)))
-        apartments = Apartment.objects.all()
-        for apartment in apartments:
-            b1_dist = b1.address.dist(apartment.address)
-            print("Dist from ", b1.building_name , " to ", apartment.apartment_name, " = ", b1_dist)
-            if b1_dist <= 1:
-                b1.nearby_apartments.add(apartment)
-            b2_dist = b2.address.dist(apartment.address)
-            print("Dist from ", b2.building_name, " to ", apartment.apartment_name, " = ", b2_dist)
-            if b2_dist <= 1:
-                b2.nearby_apartments.add(apartment)
-        self.assertEqual(b2.nearby_apartments.count(), 1) # One apartment near b2
-        self.assertEqual(b2.nearby_apartments.all()[0].apartment_slug, "308")
-
-        self.assertEqual(b1.nearby_apartments.count(), 3) # Three apartments near b1
-        self.assertEqual(b1.nearby_apartments.all()[0].apartment_slug, "309")
-        self.assertEqual(b1.nearby_apartments.all()[1].apartment_slug, "308")
-        self.assertEqual(b1.nearby_apartments.all()[2].apartment_slug, "Suites")
         building_slugs = ['test','test2']
         starting_index = 0
         ending_index = 2
-        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC"
+        print("Check nearest apartments 2")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print(data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data),0)
+        # No nearest apartments within 1 mile of these two buildings as 308, although less than 1 mile via haversine, is more than 1 mile actual walking distance
+
+    def test_get_nearest_apartments_three(self):
+        """
+        Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
+        Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
+        and then we use the and operator in set notation to see buildings near the important buildings
+
+        In this case though, we are checking if some of the apartments near one important building is not near another important building and returns the number of important buildings near both
+
+        :return:
+        """
+        b1 = ImportantBuilding.objects.create(building_slug="test",
+                                              building_name="The test",
+                                              address=Address.objects.create(address1="310 Green St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.11),
+                                                                long=Decimal(-88.247940)))
+        b2 = ImportantBuilding.objects.create(building_slug="test2",
+                                              building_name="The test 2",
+                                              address=Address.objects.create(address1="341 Green St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.13),
+                                                                long=Decimal(-88.247940)))
+        building_slugs = ['test','test2']
+        starting_index = 0
+        ending_index = 2
+        print("Check nearest apartments 2")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1.25"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
         print(data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data[0]['apartment_slug'], "308")
         self.assertEqual(len(data),1)
-        # Nearest apartment to both of these buildings is 308
+        # Apartments within 1.25 miles of these two buildings is 308
+
+    def test_get_nearest_apartments_biking(self):
+        """
+
+        :return:
+        """
+        b1 = ImportantBuilding.objects.create(building_slug="test",
+                                              building_name="The test",
+                                              address=Address.objects.create(address1="310 Green St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.11),
+                                                                long=Decimal(-88.247940)))
+        b2 = ImportantBuilding.objects.create(building_slug="test2",
+                                              building_name="The test 2",
+                                              address=Address.objects.create(address1="341 Green St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.13),
+                                                                long=Decimal(-88.247940)))
+        building_slugs = ['test','test2']
+        starting_index = 0
+        ending_index = 2
+        print("Check nearest apartments 2")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1.25"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print(data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data),0)
+        # No apartments within 1.25 miles biking distance
+
+    def test_get_nearest_apartments_biking_two(self):
+        """
+        Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
+        Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
+        and then we use the and operator in set notation to see buildings near the important buildings
+
+        :return:
+        """
+        b1 = ImportantBuilding.objects.create(building_slug="test",
+                                              building_name="The test",
+                                              address=Address.objects.create(address1="773 S 3rd St", zip_code="61020",
+                                                                             city="Champaign", lat=Decimal(40.201),
+                                                                             long=Decimal(-88.235970)))
+        b2 = ImportantBuilding.objects.create(building_slug="test2",
+                                              building_name="The test 2",
+                                              address=Address.objects.create(address1="775 S 3rd St", zip_code="61020",
+                                                                             city="Champaign", lat=Decimal(40.202),
+                                                                             long=Decimal(-88.235970)))
+        building_slugs = ['test','test2']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "the-suite")
+        self.assertEqual(data[1]['apartment_slug'], "suite-life")
+        self.assertEqual(len(data), 2)
+        # Nearest apartment to both of these buildings is the-suite and suite-life at the moment
+
+class NearestApartmentsTestTwo(APITestCase):
+    def setUp(self):
+        Apartment.objects.create(apartment_slug="207",
+                                 apartment_name="207 S Fifth Street",
+                                 address=Address.objects.create(address1="207 S Fifth St", zip_code="61820",
+                                                                city="Champaign", lat=Decimal(40.114705328876),
+                                                                long=Decimal(-88.23236328839553)),
+                                 min_cost=600,
+                                 max_cost=800,
+                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
+                                 )
+
+        Apartment.objects.create(apartment_slug="suites-at-third",
+                                 apartment_name="Suites at Third",
+                                 address=Address.objects.create(address1="707 S 3rd Street", zip_code="61820",
+                                                                city="Champaign", lat=Decimal(40.1095247183999),
+                                                                long=Decimal(-88.23583480189046)),
+                                 min_cost=600,
+                                 max_cost=800,
+                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
+                                 )
+
+    def test_get_nearest_apartments_walk(self):
+        """
+        Walking distance of 1 mile from one important building
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Both apartments are 1 mile from Siebel
+        
+    def test_get_nearest_apartments_walk_two(self):
+        """
+        Walking distance of 0.5 miles from one important building
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=0.5"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(len(data), 1)
+        # Only one apartment within 0.5 miles walking distance from Siebel
+
+    def test_get_nearest_apartments_walk_three(self):
+        """
+        Walking distance of 0.45 miles from one important building
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=0.45"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(len(data), 1)
+        # Only one apartment within 0.45 miles walking distance from Siebel
+
+    def test_get_nearest_apartments_walk_four(self):
+        """
+        Walking distance of 0.25 miles from one important building
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=0.25"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
+        # No apartment within 0.25 walking distance from siebel
+
+    def test_get_nearest_apartments_walk_five(self):
+        """
+        Walking distance of 2 miles from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=2"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Both apartments are within 2 miles from siebel and ARC
+
+    def test_get_nearest_apartments_walk_six(self):
+        """
+        Walking distance of 1 mile from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 1)
+        # Only suites-at-third within 1 mile walking dist from both Siebel and ARC
+
+    def test_get_nearest_apartments_walk_seven(self):
+        """
+        Walking distance of 0.5 mile from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=0.5"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
+        # Only suites-at-third within 1 mile walking dist from both Siebel and ARC
+
+    def test_get_nearest_apartments_bike_one(self):
+        """
+        
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments bike 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Both apartments within 1 mile biking distance from Siebel
+
+    def test_get_nearest_apartments_bike_two(self):
+        """
+        
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments bike 2")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=0.5"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(len(data), 1)
+        # One apartment within 0.5 mile biking distance from Siebel
+
+    def test_get_nearest_apartments_bike_three(self):
+        """
+        
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments bike 3")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=0.4"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
+        # No apartments within 0.4 miles biking distance
+
+    def test_get_nearest_apartments_bike_four(self):
+        """
+        Biking distance of 2 miles from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments bike 4")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=2"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Both apartments are within 2 miles from siebel and ARC
+
+    def test_get_nearest_apartments_bike_five(self):
+        """
+        Biking distance of 1 mile from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments bike 5")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 1)
+        # Only suites-at-third within 1 mile walking dist from both Siebel and ARC
+
+    def test_get_nearest_apartments_bike_six(self):
+        """
+        Biking distance of 0.5 mile from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=0.5"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
+        # No apartment within 0.5 miles from both
+
+    
+
+    def test_get_nearest_apartments_drive_one(self):
+        """
+        Driving distance of 1 mile from one important building 
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Both apartments within 1 mile driving distance from Siebel
+
+    def test_get_nearest_apartments_drive_two(self):
+        """
+        Driving distance of 0.5 miles from one important building
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=0.5"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(len(data), 1)
+        # Both apartments within 0.5 mile driving distance from Siebel
+
+    def test_get_nearest_apartments_drive_three(self):
+        """
+        Driving distance of 0.4 from one important building
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        building_slugs = ['siebel']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=0.4"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
+        # No apartment within 0.4 miles from siebel
+
+    def test_get_nearest_apartments_drive_four(self):
+        """
+        Driving distance of 2 miles from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=2"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Both apartments are within 2 miles from siebel and ARC
+
+    def test_get_nearest_apartments_drive_five(self):
+        """
+        Driving distance of 1 mile from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 1)
+        # Only suites-at-third within 1 mile walking dist from both Siebel and ARC
+
+    def test_get_nearest_apartments_drive_six(self):
+        """
+        Driving distance of 0.5 mile from two important buildings
+
+        :return:
+        """
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=0.5"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
+        # No apartment within 0.5 miles from both
+
+    def test_get_nearest_apartments_walk_bike_one(self):
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1&minBikingDist=2"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Both apartments either within one mile walk or two mile bike from siebel or ARC
+
+    def test_get_nearest_apartments_walk_bike_two(self):
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1&minBikingDist=1.5"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Both apartments either within one mile walk or 1.5 mile bike from siebel or ARC
+
+    def test_get_nearest_apartments_walk_bike_three(self):
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1&minBikingDist=1"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 1)
+        # Only Suites within one mile walk or 1 mile bike from siebel and ARC
+
+    def test_get_nearest_apartments_walk_bike_drive_one(self):
+        ImportantBuilding.objects.create(building_slug="siebel",
+                                              building_name="Siebel Center for Computer Science",
+                                              address=Address.objects.create(address1="201 N Goodwin Ave",
+                                               zip_code="61801", 
+                                               city="Urbana", 
+                                               lat=Decimal('40.11397506604104'),
+                               long=Decimal('-88.2249588393126')))
+
+        ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+
+        building_slugs = ['siebel', 'arc']
+        starting_index = 0
+        ending_index = 4
+        print("Check nearest apartments 1")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1&minBikingDist=1&minDrivingDist=2"
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        print("data: ", data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data[0]['apartment_slug'], "207")
+        self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
+        self.assertEqual(len(data), 2)
+        # Only Suites within one mile walk or 1 mile bike from siebel and ARC
+
 
 class TestDistances(TestCase):
     def setUp(self) -> None:

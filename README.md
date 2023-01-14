@@ -104,6 +104,36 @@ On the backend, the project uses Django and its REST framework along with the Mo
 * [Presentation link here](https://docs.google.com/presentation/d/1Zhr8qFA--O80eYQpkk2Fhpn2VT1A9H9hk1qBDjLDzeg/edit?usp=sharing)
 
 
+## Testing
+To run the formal unit tests locally on the backend, we first must go to the backend code. The backend code is in the `backend` folder of the repo, so to go to the backend code, change directory to the backend folder
+```
+cd backend
+```
+For the backend code to run, first the prerequisite libraries have to be installed. There is a file requirements.txt with the libraries needed to run the backend
+
+* python
+  ```sh
+  pip install -r requirements.txt
+  ```
+
+
+1. If you made any changes on the models.py, first, make the migrations of the Django models by running
+   
+   ```
+   python manage.py makemigrations
+   ```
+   
+2. Migrate the changes made
+
+   ```
+   python manage.py migrate
+   ```
+
+3. Run the unit tests with
+   ```
+   python manage.py test
+   ```
+
 ## Creators
 * **Yug Mittal** -- Worked on backend code
 * **Luke Zhang** -- Worked on backend code
