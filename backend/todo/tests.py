@@ -874,7 +874,6 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -902,7 +901,6 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=0.5"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -929,7 +927,6 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=0.45"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -956,7 +953,6 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=0.25"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -990,11 +986,9 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=2"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
-        print("data: ", data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data[0]['apartment_slug'], "207")
         self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
@@ -1026,7 +1020,6 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1061,7 +1054,6 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=0.5"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1087,7 +1079,7 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments bike 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1115,7 +1107,7 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments bike 2")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=0.5"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1142,7 +1134,7 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments bike 3")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=0.4"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1176,7 +1168,7 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments bike 4")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=2"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1212,7 +1204,7 @@ class NearestApartmentsTestTwo(APITestCase):
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments bike 5")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)

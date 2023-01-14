@@ -176,35 +176,39 @@ def get_nearest_apartments(request):
         try:
             new_walking_apartments = set()
             building = ImportantBuilding.objects.get(building_slug=slug)
-            for apartment in walking_apartments:
-                dist_val = building.address.dist(apartment.address)
-                if dist_val <= min_walking_dist:
-                    actual_walk_dist = building.address.get_walking_dist(apartment.address)
-                    if actual_walk_dist <= min_walking_dist:
-                        new_walking_apartments.add(apartment)
+            if min_walking_dist != -1:
+                for apartment in walking_apartments:
+                    dist_val = building.address.dist(apartment.address)
+                    if dist_val <= min_walking_dist:
+                        actual_walk_dist = building.address.get_walking_dist(apartment.address)
+                        if actual_walk_dist <= min_walking_dist:
+                            new_walking_apartments.add(apartment)
 
             # apartments = apartments & set(building.nearby_apartments.all())
             if len(new_walking_apartments) < len(walking_apartments):
                 walking_apartments = new_walking_apartments
 
             new_biking_apartments = set()
-            for apartment in biking_apartments:
-                dist_val = building.address.dist(apartment.address)
-                if dist_val <= min_biking_dist:
-                    actual_bike_dist = building.address.get_biking_dist(apartment.address)
-                    if actual_bike_dist <= min_biking_dist:
-                        new_biking_apartments.add(apartment)
+
+            if min_biking_dist != -1:
+                for apartment in biking_apartments:
+                    dist_val = building.address.dist(apartment.address)
+                    if dist_val <= min_biking_dist:
+                        actual_bike_dist = building.address.get_biking_dist(apartment.address)
+                        if actual_bike_dist <= min_biking_dist:
+                            new_biking_apartments.add(apartment)
             
             if len(new_biking_apartments) < len(biking_apartments):
                 biking_apartments = new_biking_apartments
 
             new_driving_apartments = set()
-            for apartment in driving_apartments:
-                dist_val = building.address.dist(apartment.address)
-                if dist_val <= min_driving_dist:
-                    actual_drive_dist = building.address.get_biking_dist(apartment.address)
-                    if actual_drive_dist <= min_driving_dist:
-                        new_driving_apartments.add(apartment)
+            if min_driving_dist != -1:
+                for apartment in driving_apartments:
+                    dist_val = building.address.dist(apartment.address)
+                    if dist_val <= min_driving_dist:
+                        actual_drive_dist = building.address.get_biking_dist(apartment.address)
+                        if actual_drive_dist <= min_driving_dist:
+                            new_driving_apartments.add(apartment)
             
             if len(new_driving_apartments) < len(driving_apartments):
                 driving_apartments = new_driving_apartments
