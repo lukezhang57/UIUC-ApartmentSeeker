@@ -382,4 +382,3 @@ class DistanceMatrixModel(models.Model):
             self.biking_distance = float(self.important_building.address.get_biking_dist(self.apartment.address))
             self.driving_distance = float(self.important_building.address.get_driving_dist(self.apartment.address))
         super().save(*args, **kwargs)
-    

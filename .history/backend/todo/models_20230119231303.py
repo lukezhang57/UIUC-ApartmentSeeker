@@ -366,7 +366,8 @@ class ApartmentSublease(models.Model):
     beds = models.IntegerField(default=1)
     baths = models.IntegerField(default=1)
 
-class DistanceMatrixModel(models.Model): 
+
+class DistanceMatrix(models.Model): 
     # unique Model that stores key information for the distance & travel times between an important building and an apartment
     important_building = models.ForeignKey(ImportantBuilding, on_delete=models.CASCADE,null=True)
     apartment =  models.ForeignKey(Apartment, on_delete=models.CASCADE,null=True) 
@@ -382,4 +383,4 @@ class DistanceMatrixModel(models.Model):
             self.biking_distance = float(self.important_building.address.get_biking_dist(self.apartment.address))
             self.driving_distance = float(self.important_building.address.get_driving_dist(self.apartment.address))
         super().save(*args, **kwargs)
-    
+
