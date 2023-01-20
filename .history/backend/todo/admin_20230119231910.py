@@ -56,6 +56,8 @@ class ImportantBuildingAdmin(admin.ModelAdmin):
                 # If the distance from apartment to building is within 1 mile
                 form.instance.nearby_apartments.add(apartment)
 
+
+
 class DistanceMatrixModelAdmin(admin.ModelAdmin):
     list_display = ['important_building', 'apartment','straight_distance','walking_distance','biking_distance','driving_distance']
       

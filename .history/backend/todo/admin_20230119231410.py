@@ -56,9 +56,15 @@ class ImportantBuildingAdmin(admin.ModelAdmin):
                 # If the distance from apartment to building is within 1 mile
                 form.instance.nearby_apartments.add(apartment)
 
+
+class DistanceMatrixAdmin(admin.ModelAdmin):
+    list_display = ['important_building', 'apartment','straight_distance','walking_distance','biking_distance','driving_distance']
+
+
 class DistanceMatrixModelAdmin(admin.ModelAdmin):
     list_display = ['important_building', 'apartment','straight_distance','walking_distance','biking_distance','driving_distance']
       
+
 # Register your models here.
 
 admin.site.register(User, UserAdmin)
@@ -68,4 +74,4 @@ admin.site.register(ApartmentReview, ReviewAdmin)
 admin.site.register(ApartmentSublease, SubleaseAdmin)
 admin.site.register(ImportantBuilding, ImportantBuildingAdmin)
 admin.site.register(University, UniversityAdmin)
-admin.site.register(DistanceMatrixModel, DistanceMatrixModelAdmin)
+admin.site.register(DistanceMatrix, DistanceMatrixAdmin)
