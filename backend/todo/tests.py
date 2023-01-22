@@ -1609,3 +1609,17 @@ class TestDistances(TestCase):
 
         self.assertTrue(math.isclose(driving_dist,1.6,abs_tol=0.05))
         # Used Openrouteservice website to determine actual driving distance 
+
+    def test_transit_time(self):
+        """
+        Checks for distance between two addresses, and checks if the walking_dist function returns the proper walking distance
+        :return:
+        """
+        arc = Address.objects.get(address1="201 E Peabody Dr", city="Champaign")
+        siebel = Address.objects.get(address1="201 N Goodwin Ave", zip_code="61801")
+
+        transit_time = arc.get_min_transit_time(siebel)
+
+        print(transit_time)
+
+        self.assertTrue(math.isclose(transit_time,16,abs_tol=0.05)) # approximately 16 minute travel time
