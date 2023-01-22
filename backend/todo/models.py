@@ -10,8 +10,35 @@ from django.contrib.auth.hashers import *
 import ssl
 from haversine import haversine, Unit
 import openrouteservice
+import requests
+from datetime import datetime
+import sys
 
 geolocator = Nominatim(user_agent="geoapiExercises")
+
+def calculate_transit_time(src, dest):
+  """
+  src (tuple of two) -- Latitude and longitude points of the source location
+  dest (tuple of two) -- Latitude and longitude points of the destination location
+  """
+  api_key = "t2CVuuBdwXgDCe1y14lnEPWKgC61C2nPNf7ZCtNhU2I"
+  data = requests.get("https://transit.router.hereapi.com/v8/routes", 
+                      params={"origin":"{0},{1}".format(src[0], src[1]), "destination":"{0},{1}".format(dest[0],dest[1]), "apiKey":api_key, }).json()
+  print(data)
+  if 'routes' in data.keys() and len(data['routes']) > 0:
+    smallest_time_min = sys.maxsize
+    for route in data['routes']:
+      print(route)
+      if 'sections' in route.keys():
+        departure_time = datetime.strptime(data['routes'][0]['sections'][0]['departure']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
+        arrival_time = datetime.strptime(data['routes'][0]['sections'][-1]['arrival']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
+        travel_time = arrival_time - departure_time
+        print("Total travel time: ", travel_time)
+        minutes = travel_time.total_seconds() / 60
+        if minutes < smallest_time_min:
+          smallest_time_min = minutes
+    return smallest_time_min
+  return -1
 
 
 # Used for getting the coordinate points and the distance calculations
@@ -106,8 +133,8 @@ class Address(models.Model):
         """
         This takes another address and computes the distance between the two addresses.
         Used for finding nearest apartments near a building
-        :param another_addr:
-        :return:
+        :param another_addr: The address that we are trying to compute the distance away from
+        :return: the haversine distance between the two addresses
         """
         try:
             add1 = (float(self.lat.to_decimal()), float(self.long.to_decimal()))
@@ -126,8 +153,8 @@ class Address(models.Model):
         """
         This takes another address and computes the walking distance between the two addresses.
         Used for finding nearest apartments from a building
-        :param another_addr:
-        :return:
+        :param another_addr: The address that we are trying to compute the distance away from
+        :return: The walking distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
         try:
@@ -150,10 +177,10 @@ class Address(models.Model):
 
     def get_biking_dist(self, another_addr):
         """
-        This takes another address and computes the distance between the two addresses.
+        This takes another address and computes the biking distance between the two addresses.
         Used for finding nearest apartments near a building
-        :param another_addr:
-        :return:
+        :param another_addr: The address that we are trying to compute the distance away from
+        :return: The biking distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
         try:
@@ -176,10 +203,10 @@ class Address(models.Model):
 
     def get_driving_dist(self, another_addr):
         """
-        This takes another address and computes the distance between the two addresses.
+        This takes another address and computes the driving distance between the two addresses.
         Used for finding nearest apartments near a building
-        :param another_addr:
-        :return:
+        :param another_addr: The address that we are trying to compute the distance away from
+        :return: The driving distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
         try:
@@ -195,6 +222,26 @@ class Address(models.Model):
             return distance
             # Calculate distance between two points with haversine.
             # Originally used Geopy to calculate distance but currently having SSL certificate errors at the moment.
+        except ValueError:
+            return np.nan
+        except KeyError:
+            return 0
+
+    def get_min_transit_time(self, another_addr):
+        """
+        This takes another address and computes the public transport travel time between the two addresses.
+        Used for finding nearest apartments near a building
+        :param another_addr: The address that we are trying to compute the distance away from
+        :return: The driving distance between two addresses
+        """
+        try:
+            add1 = (float(self.lat.to_decimal()), float(self.long.to_decimal()))
+            add2 = (float(another_addr.lat.to_decimal()), float(another_addr.long.to_decimal()))
+        except AttributeError:
+            add1 = (float(self.lat), float(self.long))
+            add2 = (float(another_addr.lat), float(another_addr.long))
+        try:
+            return calculate_transit_time(add1, add2)
         except ValueError:
             return np.nan
         except KeyError:
