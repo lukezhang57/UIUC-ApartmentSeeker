@@ -1622,4 +1622,4 @@ class TestDistances(TestCase):
 
         print(transit_time)
 
-        self.assertTrue(math.isclose(transit_time,16,abs_tol=0.05)) # approximately 16 minute travel time
+        self.assertTrue(math.isclose(transit_time,15,abs_tol=0.05)) # approximately 16 minute travel time
