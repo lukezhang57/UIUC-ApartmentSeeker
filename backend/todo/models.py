@@ -25,9 +25,8 @@ def calculate_transit_time(src, dest):
   :param dest (tuple of two) -- Latitude and longitude points of the destination location
   :return minimum travel time via public transport in minutes
   """
-  api_key = "t2CVuuBdwXgDCe1y14lnEPWKgC61C2nPNf7ZCtNhU2I"
   data = requests.get("https://transit.router.hereapi.com/v8/routes", 
-                      params={"origin":"{0},{1}".format(src[0], src[1]), "destination":"{0},{1}".format(dest[0],dest[1]), "apiKey":api_key, }).json()
+                      params={"origin":"{0},{1}".format(src[0], src[1]), "destination":"{0},{1}".format(dest[0],dest[1]), "apiKey":"t2CVuuBdwXgDCe1y14lnEPWKgC61C2nPNf7ZCtNhU2I", }).json()
   print(data)
   if 'routes' in data.keys() and len(data['routes']) > 0:
     smallest_time_min = sys.maxsize
