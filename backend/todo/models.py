@@ -13,6 +13,12 @@ import openrouteservice
 import requests
 from datetime import datetime
 import sys
+from datetime import date
+import environ
+
+
+env = environ.Env()
+environ.Env.read_env()
 
 geolocator = Nominatim(user_agent="geoapiExercises")
 
@@ -25,23 +31,23 @@ def calculate_transit_time(src, dest):
   :param dest (tuple of two) -- Latitude and longitude points of the destination location
   :return minimum travel time via public transport in minutes
   """
-  data = requests.get("https://transit.router.hereapi.com/v8/routes", 
-                      params={"origin":"{0},{1}".format(src[0], src[1]), "destination":"{0},{1}".format(dest[0],dest[1]), "apiKey":"t2CVuuBdwXgDCe1y14lnEPWKgC61C2nPNf7ZCtNhU2I", }).json()
-  print(data)
-  if 'routes' in data.keys() and len(data['routes']) > 0:
-    smallest_time_min = sys.maxsize
-    for route in data['routes']:
-      print(route)
-      if 'sections' in route.keys():
-        departure_time = datetime.strptime(data['routes'][0]['sections'][0]['departure']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
-        arrival_time = datetime.strptime(data['routes'][0]['sections'][-1]['arrival']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
-        travel_time = arrival_time - departure_time
-        print("Total travel time: ", travel_time)
-        minutes = travel_time.total_seconds() / 60
-        if minutes < smallest_time_min:
-          smallest_time_min = minutes
-    return smallest_time_min
-  return -1
+  
+  smallest_time_min = sys.maxsize
+  for i in range(24):
+    dt = date.today()
+    depart_time = dt.strftime("%Y-%m-%d") + "T{0}:00:00".format(i)
+    data = requests.get("https://transit.router.hereapi.com/v8/routes", 
+                      params={"origin":"{0},{1}".format(src[0], src[1]), "destination":"{0},{1}".format(dest[0],dest[1]), "apiKey":env('HERE_API_KEY'), "departureTime":depart_time, "alternatives":5}).json()
+    if 'routes' in data.keys() and len(data['routes']) > 0:
+      for route in data['routes']:
+        if 'sections' in route.keys():
+          departure_time = datetime.strptime(data['routes'][0]['sections'][0]['departure']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
+          arrival_time = datetime.strptime(data['routes'][0]['sections'][-1]['arrival']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
+          travel_time = arrival_time - departure_time
+          minutes = travel_time.total_seconds() / 60
+          if minutes < smallest_time_min:
+            smallest_time_min = minutes
+  return smallest_time_min
 
 
 # Used for getting the coordinate points and the distance calculations
