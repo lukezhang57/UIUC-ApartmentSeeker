@@ -18,8 +18,12 @@ geolocator = Nominatim(user_agent="geoapiExercises")
 
 def calculate_transit_time(src, dest):
   """
-  src (tuple of two) -- Latitude and longitude points of the source location
-  dest (tuple of two) -- Latitude and longitude points of the destination location
+  This takes two coordinate pairs and calculates the minimum time between the two coordinates via public transport
+
+
+  :param src (tuple of two) -- Latitude and longitude points of the source location
+  :param dest (tuple of two) -- Latitude and longitude points of the destination location
+  :return minimum travel time via public transport in minutes
   """
   api_key = "t2CVuuBdwXgDCe1y14lnEPWKgC61C2nPNf7ZCtNhU2I"
   data = requests.get("https://transit.router.hereapi.com/v8/routes", 
