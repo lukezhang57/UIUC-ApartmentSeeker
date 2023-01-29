@@ -57,7 +57,7 @@ class ImportantBuildingAdmin(admin.ModelAdmin):
                 form.instance.nearby_apartments.add(apartment)
 
 class DistanceMatrixModelAdmin(admin.ModelAdmin):
-    list_display = ['important_building', 'apartment','straight_distance','walking_distance','biking_distance','driving_distance']
+    list_display = ['important_building', 'apartment','straight_distance','walking_distance','biking_distance','driving_distance', 'transit_travel']
       
 # Register your models here.
 
