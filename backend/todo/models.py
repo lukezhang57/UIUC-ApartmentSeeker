@@ -11,10 +11,10 @@ import ssl
 from haversine import haversine, Unit
 import openrouteservice
 import requests
-from datetime import datetime
 import sys
-from datetime import date
+from datetime import *
 import environ
+import time
 
 
 env = environ.Env()
@@ -24,30 +24,52 @@ geolocator = Nominatim(user_agent="geoapiExercises")
 
 def calculate_transit_time(src, dest):
   """
-  This takes two coordinate pairs and calculates the minimum time between the two coordinates via public transport
+  This takes two coordinate pairs and calculates the average time between the two coordinates via public transport
 
 
   :param src (tuple of two) -- Latitude and longitude points of the source location
   :param dest (tuple of two) -- Latitude and longitude points of the destination location
-  :return minimum travel time via public transport in minutes
+  :return average travel time via public transport in minutes
   """
-  
-  smallest_time_min = sys.maxsize
-  for i in range(24):
-    dt = date.today()
-    depart_time = dt.strftime("%Y-%m-%d") + "T{0}:00:00".format(i)
-    data = requests.get("https://transit.router.hereapi.com/v8/routes", 
-                      params={"origin":"{0},{1}".format(src[0], src[1]), "destination":"{0},{1}".format(dest[0],dest[1]), "apiKey":env('HERE_API_KEY'), "departureTime":depart_time, "alternatives":5}).json()
-    if 'routes' in data.keys() and len(data['routes']) > 0:
-      for route in data['routes']:
-        if 'sections' in route.keys():
-          departure_time = datetime.strptime(data['routes'][0]['sections'][0]['departure']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
-          arrival_time = datetime.strptime(data['routes'][0]['sections'][-1]['arrival']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
-          travel_time = arrival_time - departure_time
-          minutes = travel_time.total_seconds() / 60
-          if minutes < smallest_time_min:
-            smallest_time_min = minutes
-  return smallest_time_min
+  here_api_key = env("HERE_API_KEY")
+  travel_times = []
+  today = date.today()
+  for j in range(14):
+    dt = today - timedelta(days=j)
+    for i in range(24):
+        depart_time = dt.strftime("%Y-%m-%d") + "T{0}:00:00".format(i)
+        data = requests.get("https://transit.router.hereapi.com/v8/routes", 
+                        params={"origin":"{0},{1}".format(src[0], src[1]), "destination":"{0},{1}".format(dest[0],dest[1]), "apiKey":here_api_key, "departureTime":depart_time, "alternatives":5}).json()
+        print(data)
+        if 'error' in data.keys():
+          # If rate limited, then approximate with GeoAPIfy (HERE API is more accurate, but GeoAPIfy gets optimized route)
+          geo_apifyurl = "https://api.geoapify.com/v1/routing"
+          querystring = {"waypoints": "{0},{1}|{2},{3}".format(src[0], src[1],dest[0],dest[1]), "mode": "approximated_transit", "apiKey": env("GEOAPIFY_API_KEY")}
+          response = requests.request("GET", geo_apifyurl, params=querystring)
+          data = response.json()
+          route_total_minutes = data["features"][0]["properties"]["time"] / 60  
+          return route_total_minutes
+        if 'routes' in data.keys() and len(data['routes']) > 0:
+            for route in data['routes']:
+                if 'sections' in route.keys():
+                    departure_time = datetime.strptime(data['routes'][0]['sections'][0]['departure']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
+                    arrival_time = datetime.strptime(data['routes'][0]['sections'][-1]['arrival']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
+                    travel_time = arrival_time - departure_time
+                    minutes = travel_time.total_seconds() / 60
+                    travel_times.append(minutes)
+
+        data = requests.get("https://transit.router.hereapi.com/v8/routes", 
+                        params={"origin":"{0},{1}".format(dest[0],dest[1]), "destination":"{0},{1}".format(src[0], src[1]), "apiKey":api_key, "departureTime":depart_time, "alternatives":5}).json()
+        if 'routes' in data.keys() and len(data['routes']) > 0:
+            for route in data['routes']:
+                if 'sections' in route.keys():
+                    departure_time = datetime.strptime(data['routes'][0]['sections'][0]['departure']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
+                    arrival_time = datetime.strptime(data['routes'][0]['sections'][-1]['arrival']['time'][0:-6], "%Y-%m-%dT%H:%M:%S")
+                    travel_time = arrival_time - departure_time
+                    minutes = travel_time.total_seconds() / 60
+                    travel_times.append(minutes)
+    time.sleep(10)
+  return np.average(np.array(travel_times)[~np.isnan(travel_times)])
 
 
 # Used for getting the coordinate points and the distance calculations
@@ -393,6 +415,15 @@ class University(models.Model):
                 self.university_slug = slugify(self.name)
                 print(self.university_slug)
 
+        for apartment in self.apartments.all():
+            for important_building in self.important_buildings.all():
+                dist, created = DistanceMatrixModel.objects.get_or_create(apartment=apartment,important_building=important_building)
+                if (created):
+                    dist.save()
+                    print("Successfully inserted ", apartment.apartment_name, "and", important_building.building_name, "distance")
+                    time.sleep(10)
+                
+
         super().save(*args, **kwargs)
 
 class ApartmentReview(models.Model):
@@ -430,6 +461,8 @@ class DistanceMatrixModel(models.Model):
     walking_distance =  models.DecimalField(decimal_places = 2,default = 0, max_digits=9,null=True)
     biking_distance = models.DecimalField(decimal_places = 2, default = 0, max_digits=9,null=True)
     driving_distance = models.DecimalField(decimal_places = 2, default = 0, max_digits=9,null=True)
+    transit_travel = models.DecimalField(decimal_places = 2, default = 0, max_digits=9,null=True)
+
 
     def save(self,  *args, **kwargs):
         if self.important_building and self.apartment:
@@ -437,5 +470,7 @@ class DistanceMatrixModel(models.Model):
             self.walking_distance =  float(self.important_building.address.get_walking_dist(self.apartment.address))
             self.biking_distance = float(self.important_building.address.get_biking_dist(self.apartment.address))
             self.driving_distance = float(self.important_building.address.get_driving_dist(self.apartment.address))
+            self.transit_travel = float(self.important_building.address.get_min_transit_time(self.apartment.address))
+            
         super().save(*args, **kwargs)
     
