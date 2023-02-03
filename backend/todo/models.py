@@ -11,9 +11,8 @@ import ssl
 from haversine import haversine, Unit
 import openrouteservice
 import requests
-from datetime import datetime
+from datetime import *
 import sys
-from datetime import date
 import environ
 import time
 
@@ -60,7 +59,7 @@ def calculate_transit_time(src, dest):
                     travel_times.append(minutes)
 
         data = requests.get("https://transit.router.hereapi.com/v8/routes", 
-                        params={"origin":"{0},{1}".format(dest[0],dest[1]), "destination":"{0},{1}".format(src[0], src[1]), "apiKey":api_key, "departureTime":depart_time, "alternatives":5}).json()
+                        params={"origin":"{0},{1}".format(dest[0],dest[1]), "destination":"{0},{1}".format(src[0], src[1]), "apiKey":here_api_key, "departureTime":depart_time, "alternatives":5}).json()
         if 'routes' in data.keys() and len(data['routes']) > 0:
             for route in data['routes']:
                 if 'sections' in route.keys():
