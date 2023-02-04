@@ -34,9 +34,14 @@ def calculate_transit_time(src, dest):
   here_api_key = env("HERE_API_KEY")
   travel_times = []
   today = date.today()
-  for j in range(14):
+
+  # From today, check the transit times for the past seven days from today 
+  # (Assuming that public transport operates on a weekly schedule (patterns repeat per week)) 
+  for j in range(7):
+    # Go to the jth day before today
     dt = today - timedelta(days=j)
     for i in range(24):
+        # Check transit times at hour i at the jth day before today
         depart_time = dt.strftime("%Y-%m-%d") + "T{0}:00:00".format(i)
         data = requests.get("https://transit.router.hereapi.com/v8/routes", 
                         params={"origin":"{0},{1}".format(src[0], src[1]), "destination":"{0},{1}".format(dest[0],dest[1]), "apiKey":here_api_key, "departureTime":depart_time, "alternatives":5}).json()
