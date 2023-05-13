@@ -8,6 +8,7 @@ import {
 } from '@chakra-ui/react'
 import { useNavigate, useLocation, useParams } from 'react-router'
 import { ExternalLinkIcon, Icon, StarIcon } from '@chakra-ui/icons'
+import { Input } from '@chakra-ui/react'
 import tmpData from '../../tmpData/apartments'
 import axios from 'axios'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
@@ -87,7 +88,12 @@ const University = () => {
   }
 
 
+  // STATE / FUNCTIONS FOR distance/time values
 
+  const [maxWalkingDist, setMaxWalkingDist] = useState("-1");
+  const [maxBikingDist, setMaxBikingDist] = useState("-1");
+  const [maxDrivingDist, setMaxDrivingDist] = useState("-1");
+  const [maxTransitTime, setMaxTransitTime] = useState("-1");
 
 
   return (
@@ -126,7 +132,7 @@ const University = () => {
                       <Box color="blue.600" textTransform="uppercase" fontWeight="bold">
                         {uniDetails.address.city}
                       </Box>
-                      <Link isExternal ml={2} color="gray.700" href={uniDetails.address.city}>
+                      <Link isExternal ml={2} color="gray.700" href={uniDetails.website_url}>
                         Visit School Website <ExternalLinkIcon mx='2px' />
                       </Link>             
                     </Box>
@@ -144,9 +150,12 @@ const University = () => {
                 <Grid>
                 </Grid>
               </Container>
-
-              <Container maxW="container.xl" flex={1}>
-                <MapContainer center={[uniDetails.address.lat, uniDetails.address.long]} zoom={13} style={{"height": "100%", "width": "500px"}}>
+            </Flex>
+            
+            
+            <Flex maxW="container.xl">
+              <Container maxWidth="container.xl" mt={2}>
+                <MapContainer center={[uniDetails.address.lat, uniDetails.address.long]} zoom={13} style={{"height": "100%", "width": "100%"}}>
                   <MapHelper />
                   <TileLayer 
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -155,207 +164,241 @@ const University = () => {
                   {selectedBuildings.map((building) => (
                     <Marker position={[building.address.lat, building.address.long]}>
                       <Popup>
-                        A pretty CSS3 popup. <br /> Easily customizable.
+                        {building.building_name}
                       </Popup>
                     </Marker>
                   ))}
                 </MapContainer>
-
-              </Container>
-            </Flex>
-            
-            
-
-            <Container maxWidth="container.xl" mt={2}>
-              <Box d="flex" mb={2} bg="white" padding={2} boxShadow="md">
-              <Multiselect
-                style={{ multiselectContainer: { width: "700px" } }}
-                options={buildings} // Options to display in the dropdown
-                selectedValues={selectedBuildings} // Preselected value to persist in dropdown
-                onSelect={onSelect} // Function will trigger on select event
-                onRemove={onRemove} // Function will trigger on remove event
-                displayValue="building_name" // Property name to display in the dropdown options
-                />
-                <Button 
-                  ml={2} 
-                  colorScheme="blue"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    let string = '['
-                    for (let i = 0; i < selectedBuildings.length; i++) {
-                      if (i != selectedBuildings.length - 1) {
-                        string += '"' + selectedBuildings[i].building_slug + '"' + ', '
-                      }  else {
-                        string += '"' + selectedBuildings[i].building_slug + '"'
-                      }
-                      
-                    }
-                    string += ']'
-                    console.log('string: ' , string)
-
-                    const getData = async () => {
-                      try {
-                        const res = await axios.get(
-                          `http://localhost:8000/api/get_nearest_apartments?universitySlug=${uni_slug}&buildingSlugs=${string}&starting_index=${0}&ending_index=${50}&minWalkingDist=${1}`
-                        )
-                        console.log('received: ' ,res.data)
-                        setUni(res.data)
-                        setSorted(res.data)
-                      } catch (e) {
-                        console.log(e)
-                      }
-                    }
-                    getData()
-                    
-                    
-           
-                  }}
-                >
-                  Find
-                </Button>
-                <Box d="flex" alignItems="center" ml={2}>
-                  <Tooltip label="Find apartments within a 1 mile radius of these buildings">
-                    <Box color="gray.500">
-                      What is this?
-                    </Box>
-                  </Tooltip>
-                </Box>
-                
-               
-                
-              </Box>
-              <Grid templateColumns='repeat(6, 1fr)' gap={3}>
-                <GridItem colSpan={1}>
-                  <Box bg="white" boxShadow="md" px={3} py={4}>
-                    <VStack alignItems="left">
-                      <Heading size="xs" mb={2}>
-                        Apply Filters
-                      </Heading>
-                      <FormControl>
-                        <FormLabel fontSize="sm">Price Range</FormLabel>
-                        <Select size="xs" onChange={(e) => {
-                          console.log(e.target.value)
-                          if (e.target.value === 'any') {
-                            setSorted(fullList)
-                          } else if (e.target.value === 'below') {
-                            let filtered = uni.filter(item => item.min_cost <= 700)
-                            console.log('filtered', filtered)
-                            setSorted(filtered)
-                          } else if (e.target.value === 'above') {
-                            let filtered = uni.filter(item => item.min_cost > 700)
-                            console.log('filtered', filtered)
-                            setSorted(filtered)
-                          }
-                        }}>
-                          <option value='any'>Any Price</option>
-                          <option value='below'>$700 and Below</option>
-                          <option value='above'>$701 and Above</option>
-                        </Select>
-                      </FormControl>
-                      <FormControl>
-                        <FormLabel fontSize="sm">Minimum Overall Rating</FormLabel>
-                        <NumberInput 
-                          size="xs" 
-                          defaultValue={0} 
-                          min={0} 
-                          max={5}
-                          
-                        >
-                          <NumberInputField onChange={(e) => {
-                            console.log(e.target.value)
-                            
-                            
-                              let filtered = sorted.filter(uni => uni.overall_rating > e.target.value)
-                              setSorted(filtered)
-                            
-                            
-
-                          }} />
-                        </NumberInput>
-                      </FormControl>
-
-                    </VStack>
-                    <Button 
-                      mt={2} 
-                      size="sm" 
-                      colorScheme="blue"
-                      onClick={(e) => {
-                        setSorted(fullList)
-                      }}
-                    >
-                      Reset
-                    </Button>
+                <Box d="flex" mb={2} bg="white" padding={2} boxShadow="md" ml={2}>
+                  <Box border='1px' borderColor='gray' d="flex" alignItems="center" ml={2}>
+                    <Stack spacing={3}>
+                      <FormLabel fontSize="sm">Maximum Preferred Walking Distance</FormLabel>
+                      <NumberInput value={maxWalkingDist} precision={2} step={0.2}
+                        onChange={(valueString) => setMaxWalkingDist(valueString)}>
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                      <FormLabel fontSize="sm">Maximum Preferred Biking Distance</FormLabel>
+                      <NumberInput value={maxBikingDist} precision={2} step={0.2}
+                        onChange={(valueString) => setMaxBikingDist(valueString)}>
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                      <FormLabel fontSize="sm">Maximum Preferred Driving Distance</FormLabel>
+                      <NumberInput value={maxDrivingDist} precision={2} step={0.2}
+                        onChange={(valueString) => setMaxDrivingDist(valueString)}>
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                      <FormLabel fontSize="sm">Maximum Preferred Transit Time</FormLabel>
+                      <NumberInput value={maxTransitTime} precision={2} step={0.2}
+                        onChange={(valueString) => setMaxTransitTime(valueString)}>
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </Stack>
                   </Box>
-                </GridItem>
-                <GridItem colSpan={5}>
-                  {/* For the reviews */}
-                  <Grid templateColumns='repeat(4, 1fr)' gap={2}>
-      
-                    {sorted.map((a) => (
-                      <Box width="100%" bg="white" boxShadow="md" key={a.id}>
-                      <Image width="100%" objectFit="cover" height={250} alt="ucla" src={a.img_url} />
-                      <Box px={3} py={3}>
-                        <Text textTransform="uppercase" fontWeight="bold" fontSize="xs">
-                          {a.address.address1}
-                        </Text>
-                        <Heading size="md">
-                          {a.apartment_name}
-                        </Heading>
-                        <Box mt={1} d="flex">
-                          <HStack spacing={1}>
-                            {(function generateStars() {
-                                let result = []
-                                let counter = 0;
-                                for (let i = 0; i < a.overall_rating; i++) {
-                                  result.push(<StarIcon boxSize={3} color="yellow.300" />)
-                                  counter++
-                                }
-                                for (let j = 0; j < 5 - counter; j++) {
-                                  result.push(<StarIcon boxSize={3} color="gray.300" />)
-                                }
-                                return result
-                              })()}
-                          </HStack>
-                          <Text ml={2} color="gray.500" fontSize="xs">Overall {a.overall_rating}/5</Text>
-                        </Box>
-                        <Text color="gray.600" fontSize="xs" mt={1}>
-                          17 total reviews
-                        </Text>
-                        <Box>
-                          <Link href={`/apartments/reviews/${a.apartment_slug}`}> 
-                            <Button 
-                              mt="2" 
-                              size="xs" 
-                              width="100%" 
-                              color="white" 
-                              bg="teal.500"
-                              _hover={{ bg:"teal.400" }}
-                            >
-                              Browse Reviews
-                            </Button>
-                          </Link>
-                          <Link href={`/apartments/sublease/${a.apartment_slug}`}> 
-                            <Button 
-                              mt="2" 
-                              size="xs" 
-                              width="100%" 
-                              colorScheme="blue"
-                              _hover={{ bg:"teal.400" }}
-                            >
-                              View Subleases
-                            </Button>
-                          </Link>
-                        </Box> 
+                <Multiselect
+                  style={{ multiselectContainer: { width: "700px" } }}
+                  options={buildings} // Options to display in the dropdown
+                  selectedValues={selectedBuildings} // Preselected value to persist in dropdown
+                  onSelect={onSelect} // Function will trigger on select event
+                  onRemove={onRemove} // Function will trigger on remove event
+                  displayValue="building_name" // Property name to display in the dropdown options
+                  />
+                  <Button 
+                    ml={2} 
+                    colorScheme="blue"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      let string = '['
+                      for (let i = 0; i < selectedBuildings.length; i++) {
+                        if (i != selectedBuildings.length - 1) {
+                          string += '"' + selectedBuildings[i].building_slug + '"' + ', '
+                        }  else {
+                          string += '"' + selectedBuildings[i].building_slug + '"'
+                        }
                         
+                      }
+                      string += ']'
+                      console.log('string: ' , string)
+
+                      const getData = async () => {
+                        try {
+                          const res = await axios.get(
+                            `http://localhost:8000/api/get_nearest_apartments?universitySlug=${uni_slug}&buildingSlugs=${string}&starting_index=${0}&ending_index=${50}&minWalkingDist=${maxWalkingDist}&minBikingDist=${maxBikingDist}&minDrivingDist=${maxDrivingDist}&maxTransitTime=${maxTransitTime}`
+                          )
+                          console.log('received: ' ,res.data)
+                          setUni(res.data)
+                          setSorted(res.data)
+                        } catch (e) {
+                          console.log(e)
+                        }
+                      }
+                      getData()
+                      
+                      
+            
+                    }}
+                  >
+                    Find
+                  </Button>
+                  {/* <Box d="flex" alignItems="center" ml={2}>
+                    <Tooltip label="Find apartments within a 1 mile radius of these buildings">
+                      <Box color="gray.500">
+                        What is this?
                       </Box>
+                    </Tooltip>
+                  </Box> */}
+                  
+                
+                  
+                </Box>
+                <Grid templateColumns='repeat(6, 1fr)' gap={3}>
+                  <GridItem colSpan={1}>
+                    <Box bg="white" boxShadow="md" px={3} py={4}>
+                      <VStack alignItems="left">
+                        <Heading size="xs" mb={2}>
+                          Apply Filters
+                        </Heading>
+                        <FormControl>
+                          <FormLabel fontSize="sm">Price Range</FormLabel>
+                          <Select size="xs" onChange={(e) => {
+                            console.log(e.target.value)
+                            if (e.target.value === 'any') {
+                              setSorted(fullList)
+                            } else if (e.target.value === 'below') {
+                              let filtered = uni.filter(item => item.min_cost <= 700)
+                              console.log('filtered', filtered)
+                              setSorted(filtered)
+                            } else if (e.target.value === 'above') {
+                              let filtered = uni.filter(item => item.min_cost > 700)
+                              console.log('filtered', filtered)
+                              setSorted(filtered)
+                            }
+                          }}>
+                            <option value='any'>Any Price</option>
+                            <option value='below'>$700 and Below</option>
+                            <option value='above'>$701 and Above</option>
+                          </Select>
+                        </FormControl>
+                        <FormControl>
+                          <FormLabel fontSize="sm">Minimum Overall Rating</FormLabel>
+                          <NumberInput 
+                            size="xs" 
+                            defaultValue={0} 
+                            min={0} 
+                            max={5}
+                            
+                          >
+                            <NumberInputField onChange={(e) => {
+                              console.log(e.target.value)
+                              
+                              
+                                let filtered = sorted.filter(uni => uni.overall_rating > e.target.value)
+                                setSorted(filtered)
+                              
+                              
+
+                            }} />
+                          </NumberInput>
+                        </FormControl>
+
+                      </VStack>
+                      <Button 
+                        mt={2} 
+                        size="sm" 
+                        colorScheme="blue"
+                        onClick={(e) => {
+                          setSorted(fullList)
+                        }}
+                      >
+                        Reset
+                      </Button>
                     </Box>
+                  </GridItem>
+                  <GridItem colSpan={5}>
+                    {/* For the reviews */}
+                    <Grid templateColumns='repeat(4, 1fr)' gap={2}>
+        
+                      {sorted.map((a) => (
+                        <Box width="100%" bg="white" boxShadow="md" key={a.id}>
+                        <Image width="100%" objectFit="cover" height={250} alt="ucla" src={a.img_url} />
+                        <Box px={3} py={3}>
+                          <Text textTransform="uppercase" fontWeight="bold" fontSize="xs">
+                            {a.address.address1}
+                          </Text>
+                          <Heading size="md">
+                            {a.apartment_name}
+                          </Heading>
+                          <Box mt={1} d="flex">
+                            <HStack spacing={1}>
+                              {(function generateStars() {
+                                  let result = []
+                                  let counter = 0;
+                                  for (let i = 0; i < a.overall_rating; i++) {
+                                    result.push(<StarIcon boxSize={3} color="yellow.300" />)
+                                    counter++
+                                  }
+                                  for (let j = 0; j < 5 - counter; j++) {
+                                    result.push(<StarIcon boxSize={3} color="gray.300" />)
+                                  }
+                                  return result
+                                })()}
+                            </HStack>
+                            <Text ml={2} color="gray.500" fontSize="xs">Overall {a.overall_rating}/5</Text>
+                          </Box>
+                          <Text color="gray.600" fontSize="xs" mt={1}>
+                            17 total reviews
+                          </Text>
+                          <Box>
+                            <Link href={`/apartments/reviews/${a.apartment_slug}`}> 
+                              <Button 
+                                mt="2" 
+                                size="xs" 
+                                width="100%" 
+                                color="white" 
+                                bg="teal.500"
+                                _hover={{ bg:"teal.400" }}
+                              >
+                                Browse Reviews
+                              </Button>
+                            </Link>
+                            <Link href={`/apartments/sublease/${a.apartment_slug}`}> 
+                              <Button 
+                                mt="2" 
+                                size="xs" 
+                                width="100%" 
+                                colorScheme="blue"
+                                _hover={{ bg:"teal.400" }}
+                              >
+                                View Subleases
+                              </Button>
+                            </Link>
+                          </Box> 
+                          
+                        </Box>
+                      </Box>
 
-                    ))}  
-                  </Grid>
-                </GridItem>
+                      ))}  
+                    </Grid>
+                  </GridItem>
 
-              </Grid>
-            </Container>
+                </Grid>
+              </Container>  
+            </Flex>
           </Box>) : <div>Loading ...</div> }
         
 
