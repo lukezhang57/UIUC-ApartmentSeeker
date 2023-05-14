@@ -9,6 +9,7 @@ import json
 from django.core.mail import send_mail
 from decimal import Decimal
 from bson.decimal128 import Decimal128
+from django.db.models import Q
 
 
 # Create your views here.
@@ -173,14 +174,30 @@ def get_nearest_apartments(request):
 
     min_driving_dist = request.query_params.get("minDrivingDist")
     min_driving_dist = float(min_driving_dist) if min_driving_dist else -1
+
+    max_transit_time = request.query_params.get("maxTransitTime")
+    max_transit_time = float(max_transit_time) if max_transit_time else -1
+    
     all_dists_from_buildings = DistanceMatrixModel.objects.filter(important_building__in=associated_buildings)
+
+    # print(all_dists_from_buildings)
+    # all_data = DistanceMatrixModel.objects.filter(walking_distance__lte=Decimal(str(min_walking_dist)))
+    # for data in all_data:
+    #     print("All data = ", data)
+
     apartments = set()
+    excluded_apartments = set()
     for dist in all_dists_from_buildings:
         # Original data type is Decimal128, so they have to convert it
-        if (float(dist.walking_distance.to_decimal()) < min_walking_dist) or float(dist.biking_distance.to_decimal()) < min_biking_dist or float(dist.driving_distance.to_decimal()) < min_driving_dist:
+        if (float(dist.walking_distance.to_decimal()) <= min_walking_dist) or float(dist.biking_distance.to_decimal()) <= min_biking_dist or float(dist.driving_distance.to_decimal()) <= min_driving_dist or float(dist.transit_travel.to_decimal()) <= max_transit_time:
             apartments.add(dist.apartment)
+        else:
+            # One apartment that may be near one building may not be near another
+            excluded_apartments.add(dist.apartment)
     
-    print(apartments)
+    # print(apartments)
+
+    apartments = apartments - excluded_apartments # Discard the apartments that don't fall in these requirements
 
     starting_index = max(0, min(int(request.query_params["starting_index"]), len(apartments)))
     # Adding starting index and ending index to speed up runtime on front end side

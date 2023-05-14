@@ -193,6 +193,7 @@ class Address(models.Model):
         :return: The walking distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        # client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c') 
         try:
             add1 = (float(self.long.to_decimal()),float(self.lat.to_decimal()))
             add2 = (float(another_addr.long.to_decimal()),float(another_addr.lat.to_decimal()))
@@ -219,6 +220,7 @@ class Address(models.Model):
         :return: The biking distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        # client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c')
         try:
             add1 = (float(self.long.to_decimal()),float(self.lat.to_decimal()))
             add2 = (float(another_addr.long.to_decimal()),float(another_addr.lat.to_decimal()))
@@ -245,6 +247,7 @@ class Address(models.Model):
         :return: The driving distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        # client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c') 
         try:
             add1 = (float(self.long.to_decimal()),float(self.lat.to_decimal()))
             add2 = (float(another_addr.long.to_decimal()),float(another_addr.lat.to_decimal()))
