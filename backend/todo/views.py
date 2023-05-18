@@ -7,6 +7,9 @@ from .serializers import *
 from .models import *
 import json
 from django.core.mail import send_mail
+from decimal import Decimal
+from bson.decimal128 import Decimal128
+from django.db.models import Q
 
 
 # Create your views here.
@@ -156,7 +159,13 @@ def get_nearest_apartments(request):
     :return: Returns list of apartments close to location
     """
     building_slugs = json.loads(request.query_params["buildingSlugs"])
-    university_slug = request.query_params["universitySlug"]
+    university = University.objects.get(university_slug=request.query_params["universitySlug"])
+    print(building_slugs)
+    
+    associated_buildings = []
+    for slug in building_slugs:
+        associated_buildings.append(ImportantBuilding.objects.get(building_slug=slug))
+    print(associated_buildings)
     min_walking_dist = request.query_params.get("minWalkingDist")
     min_walking_dist = float(min_walking_dist) if min_walking_dist else -1
 
@@ -166,61 +175,29 @@ def get_nearest_apartments(request):
     min_driving_dist = request.query_params.get("minDrivingDist")
     min_driving_dist = float(min_driving_dist) if min_driving_dist else -1
 
-    try:
-        university = University.objects.get(university_slug=university_slug)
-        walking_apartments = biking_apartments = driving_apartments = set(university.apartments.all())
-    except University.DoesNotExist:
-        walking_apartments = biking_apartments = driving_apartments = set(Apartment.objects.all())
-
-    for slug in building_slugs:
-        try:
-            new_walking_apartments = set()
-            building = ImportantBuilding.objects.get(building_slug=slug)
-            if min_walking_dist != -1:
-                for apartment in walking_apartments:
-                    dist_val = building.address.dist(apartment.address)
-                    if dist_val <= min_walking_dist:
-                        actual_walk_dist = building.address.get_walking_dist(apartment.address)
-                        if actual_walk_dist <= min_walking_dist:
-                            new_walking_apartments.add(apartment)
-
-            # apartments = apartments & set(building.nearby_apartments.all())
-            if len(new_walking_apartments) < len(walking_apartments):
-                walking_apartments = new_walking_apartments
-
-            new_biking_apartments = set()
-
-            if min_biking_dist != -1:
-                for apartment in biking_apartments:
-                    dist_val = building.address.dist(apartment.address)
-                    if dist_val <= min_biking_dist:
-                        actual_bike_dist = building.address.get_biking_dist(apartment.address)
-                        if actual_bike_dist <= min_biking_dist:
-                            new_biking_apartments.add(apartment)
-            
-            if len(new_biking_apartments) < len(biking_apartments):
-                biking_apartments = new_biking_apartments
-
-            new_driving_apartments = set()
-            if min_driving_dist != -1:
-                for apartment in driving_apartments:
-                    dist_val = building.address.dist(apartment.address)
-                    if dist_val <= min_driving_dist:
-                        actual_drive_dist = building.address.get_biking_dist(apartment.address)
-                        if actual_drive_dist <= min_driving_dist:
-                            new_driving_apartments.add(apartment)
-            
-            if len(new_driving_apartments) < len(driving_apartments):
-                driving_apartments = new_driving_apartments
-
-            # QuerySets follow the set relation, and to get nearby apartments to each building However, I noticed that
-            # the AND operator creates copies of the models, which means that if we use the AND operator again It will
-            # give an empty set as although our contents may be similar, the data is stored in different memory addresses
-            # hence we are casting the QuerySets to sets, and intersection of sets doesn't create duplicates
-        except ImportantBuilding.DoesNotExist:
-            print("Building with slug ", slug, " does not exist")
+    max_transit_time = request.query_params.get("maxTransitTime")
+    max_transit_time = float(max_transit_time) if max_transit_time else -1
     
-    apartments = walking_apartments | biking_apartments | driving_apartments
+    all_dists_from_buildings = DistanceMatrixModel.objects.filter(important_building__in=associated_buildings)
+
+    # print(all_dists_from_buildings)
+    # all_data = DistanceMatrixModel.objects.filter(walking_distance__lte=Decimal(str(min_walking_dist)))
+    # for data in all_data:
+    #     print("All data = ", data)
+
+    apartments = set()
+    excluded_apartments = set()
+    for dist in all_dists_from_buildings:
+        # Original data type is Decimal128, so they have to convert it
+        if (float(dist.walking_distance.to_decimal()) <= min_walking_dist) or float(dist.biking_distance.to_decimal()) <= min_biking_dist or float(dist.driving_distance.to_decimal()) <= min_driving_dist or float(dist.transit_travel.to_decimal()) <= max_transit_time:
+            apartments.add(dist.apartment)
+        else:
+            # One apartment that may be near one building may not be near another
+            excluded_apartments.add(dist.apartment)
+    
+    # print(apartments)
+
+    apartments = apartments - excluded_apartments # Discard the apartments that don't fall in these requirements
 
     starting_index = max(0, min(int(request.query_params["starting_index"]), len(apartments)))
     # Adding starting index and ending index to speed up runtime on front end side

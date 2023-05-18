@@ -20,7 +20,7 @@ import time
 env = environ.Env()
 environ.Env.read_env()
 
-geolocator = Nominatim(user_agent="geoapiExercises")
+geolocator = Nominatim(user_agent="ApartmentSeeker")
 
 def calculate_transit_time(src, dest):
   """
@@ -193,6 +193,7 @@ class Address(models.Model):
         :return: The walking distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        # client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c') 
         try:
             add1 = (float(self.long.to_decimal()),float(self.lat.to_decimal()))
             add2 = (float(another_addr.long.to_decimal()),float(another_addr.lat.to_decimal()))
@@ -219,6 +220,7 @@ class Address(models.Model):
         :return: The biking distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        # client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c')
         try:
             add1 = (float(self.long.to_decimal()),float(self.lat.to_decimal()))
             add2 = (float(another_addr.long.to_decimal()),float(another_addr.lat.to_decimal()))
@@ -245,6 +247,7 @@ class Address(models.Model):
         :return: The driving distance between two addresses
         """
         client = openrouteservice.Client(key='5b3ce3597851110001cf62482a4d26fe8bd64a11a5a0e870521fc55e') 
+        # client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c') 
         try:
             add1 = (float(self.long.to_decimal()),float(self.lat.to_decimal()))
             add2 = (float(another_addr.long.to_decimal()),float(another_addr.lat.to_decimal()))
@@ -419,6 +422,17 @@ class University(models.Model):
             if not self.university_slug:
                 self.university_slug = slugify(self.name)
                 print(self.university_slug)
+
+        # Update the distance matrix between the university's apartments and important buildings every time a university is saved
+        for building in self.important_buildings.all():
+            for apartment in self.apartments.all():
+                print("Apartment:", apartment.apartment_slug, "Building:", building.building_slug)
+                dist_matrix, is_created = DistanceMatrixModel.objects.get_or_create(important_building=building, apartment=apartment)
+                if is_created:
+                    dist_matrix.save()
+                    time.sleep(30) # wait 30 seconds after running save for one distance matrix
+                else:
+                    print("Already created")
 
         super().save(*args, **kwargs)
 
