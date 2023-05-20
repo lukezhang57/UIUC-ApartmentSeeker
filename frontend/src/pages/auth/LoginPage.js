@@ -9,6 +9,7 @@ import Navbar from '../../components/Navbar'
 import { useEffect, useState } from 'react'
 import axios from 'axios';
 import { useNavigate } from 'react-router';
+import { Helmet } from 'react-helmet'
 
 const Login = () => {
 
@@ -38,6 +39,9 @@ const Login = () => {
     <>
       <Navbar/>
       <Flex justify="center" align="center" minHeight="100vh" bg="gray.50">
+        <Helmet>
+          <title>Log In | ApartmentSeeker</title>
+        </Helmet>
         <Stack spacing="10">
           
           <Stack align="center">

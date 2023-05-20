@@ -14,6 +14,7 @@ import axios from 'axios'
 import StarRatingView from '../../components/StarRatingView'
 import { useLocation } from 'react-router'
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet'
 
 const Reviews = () => {
 
@@ -105,6 +106,9 @@ const Reviews = () => {
       <Navbar />
       {reviews ? 
         (<Box mt={2}>
+          <Helmet>
+              <title>Reviews for {apartment_slug} | ApartmentSeeker</title>
+          </Helmet>
           <Container maxWidth="container.xl" bg="white" boxShadow="xl" borderWidth={1} borderColor="gray.200" py={4} px={4}>
             <Box>
               <Text fontSize="sm" color="gray.700">Viewing Reviews for</Text>

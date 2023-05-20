@@ -4,6 +4,7 @@ import {
   FormLabel, Flex, Button, Grid
 } from '@chakra-ui/react'
 
+import { Helmet } from 'react-helmet'
 
 
 const Signup = () => {
@@ -11,8 +12,10 @@ const Signup = () => {
 
   return (
     <Flex justify="center" align="center" minHeight="100vh" bg="gray.50">
+      <Helmet>
+        <title>Sign Up | ApartmentSeeker</title>
+      </Helmet>
       <Stack spacing="10">
-        
         <Stack align="center">
           <Heading fontWeight="semibold">Create an account</Heading>
         </Stack>
