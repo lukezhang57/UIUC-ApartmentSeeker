@@ -8,7 +8,7 @@ import Sublease from '../../components/Sublease'
 import axios from 'axios'
 import { useLocation, useNavigate, Navigate } from 'react-router'
 import { useState } from 'react'
-
+import { Helmet } from 'react-helmet'
 
 
 const Subleases = () => {
@@ -62,6 +62,9 @@ const Subleases = () => {
       (<>
        <Flex justify="center" align="center" minHeight="100vh" bg="gray.50">
           <Stack spacing="10">
+          <Helmet>
+              <title>Submitting sublease for {apartment_slug} | ApartmentSeeker</title>
+          </Helmet>
           
           <Stack align="center">
             <Heading fontWeight="semibold">

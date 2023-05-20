@@ -12,8 +12,11 @@ import { Input } from '@chakra-ui/react'
 import tmpData from '../../tmpData/apartments'
 import axios from 'axios'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
+import * as L from "leaflet";
 import MapHelper from './MapHelper'
 import Multiselect from 'multiselect-react-dropdown';
+import { Helmet } from 'react-helmet';
+
 
 const University = () => {
 
@@ -32,7 +35,18 @@ const University = () => {
   const [minRating, setMinRating] = useState(0)
   const filterThreshhold = 700
 
-  
+   //  Create the Icon
+  const LeafIcon = L.Icon.extend({
+    options: {}
+  });
+
+  const greenIcon = new LeafIcon({
+      iconUrl:
+        "https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|2ecc71&chf=a,s,ee00FFFF"
+    });
+
+    //  Use the state hook:
+  const [icon, setIcon] = useState(greenIcon);
 
 
   useEffect(() => {
@@ -98,6 +112,9 @@ const University = () => {
 
   return (
     <>
+
+      
+
       <Navbar />
         <Stack mt={4} display={(uni && uniDetails && buildings) && "none"}>
           <Skeleton isLoaded={(uni && uniDetails && buildings)} height='20px' />
@@ -107,6 +124,9 @@ const University = () => {
         
         {(uni && uniDetails && buildings) ? 
           (<Box pt={2} mt={2} d="flex" flexDir="column" justifyContent="center" alignItems="center">
+            <Helmet>
+              <title>Apartments of {uniDetails.name} | ApartmentSeeker</title>
+            </Helmet>
             <Flex maxW="container.xl">
 
             
@@ -155,7 +175,7 @@ const University = () => {
             
             <Flex maxW="container.xl">
               <Container maxWidth="container.xl" mt={2}>
-                <MapContainer center={[uniDetails.address.lat, uniDetails.address.long]} zoom={13} style={{"height": "100%", "width": "100%"}}>
+                <MapContainer center={[uniDetails.address.lat, uniDetails.address.long]} zoom={13} style={{"height": "50%", "width": "100%"}}>
                   <MapHelper />
                   <TileLayer 
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -165,6 +185,14 @@ const University = () => {
                     <Marker position={[building.address.lat, building.address.long]}>
                       <Popup>
                         {building.building_name}
+                      </Popup>
+                    </Marker>
+                  ))}
+
+                  {sorted.map((apartment) => (
+                    <Marker position={[apartment.address.lat, apartment.address.long]} icon={icon}>
+                      <Popup>
+                        {apartment.apartment_name}
                       </Popup>
                     </Marker>
                   ))}

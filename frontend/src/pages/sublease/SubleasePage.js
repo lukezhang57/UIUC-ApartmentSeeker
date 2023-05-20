@@ -7,6 +7,7 @@ import Sublease from '../../components/Sublease'
 import axios from 'axios'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { Helmet } from 'react-helmet'
 
 const Subleases = () => {
 
@@ -46,6 +47,9 @@ const Subleases = () => {
       {subleases &&
         (<Container maxW="container.xl" mt={4}>
           <Box textAlign="center">
+            <Helmet>
+                <title>Subleases for {apartment_slug} | ApartmentSeeker</title>
+            </Helmet>
             <Heading>Viewing Subleases for {subleases.length > 0 ? subleases[0].associated_apartment.apartment_name : apartment_slug}</Heading>
             <Heading size="lg">{subleases[0]?.associated_apartment.apartment_name}</Heading>
           </Box>
