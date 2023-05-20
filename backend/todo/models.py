@@ -201,7 +201,12 @@ class Address(models.Model):
             add1 = (float(self.long), float(self.lat))
             add2 = (float(another_addr.long), float(another_addr.lat))
         coords = (add1,add2)
-        walking_directions = client.directions(coords, units="mi", profile='foot-walking')
+        walking_directions = None
+        try:
+            walking_directions = client.directions(coords, units="mi", profile='foot-walking')
+        except openrouteservice.exceptions.ApiError:
+            client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c')
+            walking_directions = client.directions(coords, units="mi", profile='foot-walking')
         try:
             distance = walking_directions['routes'][0]['summary']['distance']
             return distance
@@ -228,7 +233,13 @@ class Address(models.Model):
             add1 = (float(self.long), float(self.lat))
             add2 = (float(another_addr.long), float(another_addr.lat))
         coords = (add1,add2)
-        biking_directions = client.directions(coords, units="mi", profile='cycling-regular')
+        biking_directions = None
+        try:
+            biking_directions = client.directions(coords, units="mi", profile='cycling-regular')
+        except openrouteservice.exceptions.ApiError:
+            # This typically means the API quota has exceeded, so we try another API key
+            client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c')
+            biking_directions = client.directions(coords, units="mi", profile='cycling-regular')
         try:
             distance = biking_directions['routes'][0]['summary']['distance']
             return distance
@@ -255,7 +266,13 @@ class Address(models.Model):
             add1 = (float(self.long), float(self.lat))
             add2 = (float(another_addr.long), float(another_addr.lat))
         coords = (add1,add2)
-        driving_directions = client.directions(coords, units="mi", profile='driving-car')
+        driving_directions = None
+        try:
+            driving_directions = client.directions(coords, units="mi", profile='driving-car')
+        except openrouteservice.exceptions.ApiError:
+            # This typically means the API quota has exceeded, so we try another API key
+            client = openrouteservice.Client(key='5b3ce3597851110001cf62483c9e20a2f1bc45f59080565204121e2c')
+            driving_directions = client.directions(coords, units="mi", profile='driving-car')
         try:
             distance = driving_directions['routes'][0]['summary']['distance']
             return distance

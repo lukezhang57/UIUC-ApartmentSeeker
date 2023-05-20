@@ -185,6 +185,94 @@ class ApartmentTestCase(TestCase):
         self.assertEqual(len(ApartmentReview.objects.all()), 3)
         self.assertEqual(review_three.review_text,
                          review.review_text)  # One person can put the same review for a different apartment
+        
+
+class DistanceMatrixTest(TestCase):
+    def setUp(self):
+        a1 = Apartment.objects.create(apartment_slug="309",
+                                 apartment_name="309 Green",
+                                 address=Address.objects.create(address1="309 Green St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.109880),
+                                                                long=Decimal(-88.247940)),
+                                 min_cost=800,
+                                 max_cost=1000,
+                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
+                                 )
+        a2 = Apartment.objects.create(apartment_slug="308",
+                                 apartment_name="308 Green",
+                                 address=Address.objects.create(address1="308 Green St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.12),
+                                                                long=Decimal(-88.247940)),
+                                 min_cost=800,
+                                 max_cost=1000,
+                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
+                                 )
+        a3 = Apartment.objects.create(apartment_slug="Suites",
+                                 apartment_name="The Suites at Third",
+                                 address=Address.objects.create(address1="705 S 3rd St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.109370),
+                                                                long=Decimal(-88.235970)),
+                                 min_cost=714,
+                                 max_cost=899,
+                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
+                                 )
+        a4 = Apartment.objects.create(apartment_slug="the-suite",
+                                 apartment_name="The Suites",
+                                 address=Address.objects.create(address1="770 S 3rd St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.2),
+                                                                long=Decimal(-88.235970)),
+                                 min_cost=714,
+                                 max_cost=899,
+                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
+                                 )
+        a5 = Apartment.objects.create(apartment_slug="suite-life",
+                                 apartment_name="The Suites Life",
+                                 address=Address.objects.create(address1="770 S 4th St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.2),
+                                                                long=Decimal(-88.236)),
+                                 min_cost=714,
+                                 max_cost=899,
+                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
+                                 )
+        
+        b1 = ImportantBuilding.objects.create(building_slug="test",
+                                              building_name="The test",
+                                              address=Address.objects.create(address1="773 S 3rd St", zip_code="61020",
+                                                                             city="Champaign", lat=Decimal(40.201),
+                                                                             long=Decimal(-88.235970)))
+        b2 = ImportantBuilding.objects.create(building_slug="test2",
+                                              building_name="The test 2",
+                                              address=Address.objects.create(address1="775 S 3rd St", zip_code="61020",
+                                                                             city="Champaign", lat=Decimal(40.202),
+                                                                             long=Decimal(-88.235970)))
+        
+        b3 = ImportantBuilding.objects.create(building_slug="test3",
+                                              building_name="The test 3",
+                                              address=Address.objects.create(address1="310 Green St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.11),
+                                                                long=Decimal(-88.247940)))
+        b4 = ImportantBuilding.objects.create(building_slug="test4",
+                                              building_name="The test 4",
+                                              address=Address.objects.create(address1="341 Green St", zip_code="61020",
+                                                                city="Champaign", lat=Decimal(40.13),
+                                                                long=Decimal(-88.247940)))
+        
+        u1 = University.objects.create(id=0, university_slug="UIUC", name="UIUC", address=Address.objects.create(address1="1401 W Green St", zip_code="61020",
+                                                                             city="Champaign", lat=Decimal(40.101987),
+                                                                             long=Decimal(-88.227157)))
+        
+        u1.apartments.add(a1)
+        u1.apartments.add(a2)
+        u1.apartments.add(a3)
+        u1.apartments.add(a4)
+        u1.important_buildings.add(b1)
+        u1.important_buildings.add(b2)
+        u1.save()
+
+    def count_distance_matrices(self):
+        self.assertEqual(len(DistanceMatrixModel.objects.all()),20) 
+        # 5 apartments and 4 buildings mean 20 distance matrix models
+    
 
 
 class AuthenticationTest(APITestCase):
@@ -630,214 +718,208 @@ class SubleaseTest(APITestCase):
         self.assertEqual(beds, sublease.beds)
         self.assertEqual(baths, sublease.baths)
 
+# This unit test is pretty disorganized, and the one below is pretty comprehensive, so I don't think this one is neccesary
+# It consumes extra requests in the process
+# class NearestApartmentsTest(APITestCase):
+#     @classmethod
+#     def setUpTestData(cls):
+#         # setUp runs every time before a test function is run, so we are replacing this with setUpTestData
+#         a1 = Apartment.objects.create(apartment_slug="309",
+#                                  apartment_name="309 Green",
+#                                  address=Address.objects.create(address1="309 Green St", zip_code="61020",
+#                                                                 city="Champaign", lat=Decimal(40.109880),
+#                                                                 long=Decimal(-88.247940)),
+#                                  min_cost=800,
+#                                  max_cost=1000,
+#                                  website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
+#                                  )
+#         a2 = Apartment.objects.create(apartment_slug="308",
+#                                  apartment_name="308 Green",
+#                                  address=Address.objects.create(address1="308 Green St", zip_code="61020",
+#                                                                 city="Champaign", lat=Decimal(40.110520),
+#                                                                 long=Decimal(-88.234258)),
+#                                  min_cost=800,
+#                                  max_cost=1000,
+#                                  website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
+#                                  )
+#         a3 = Apartment.objects.create(apartment_slug="Suites",
+#                                  apartment_name="The Suites at Third",
+#                                  address=Address.objects.create(address1="705 S 3rd St", zip_code="61020",
+#                                                                 city="Champaign", lat=Decimal(40.109370),
+#                                                                 long=Decimal(-88.235970)),
+#                                  min_cost=714,
+#                                  max_cost=899,
+#                                  website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
+#                                  )
+#         a4 = Apartment.objects.create(apartment_slug="the-suite",
+#                                  apartment_name="The Suites",
+#                                  address=Address.objects.create(address1="770 S 3rd St", zip_code="61020",
+#                                                                 city="Champaign", lat=Decimal(40.2),
+#                                                                 long=Decimal(-88.235970)),
+#                                  min_cost=714,
+#                                  max_cost=899,
+#                                  website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
+#                                  )
+#         a5 = Apartment.objects.create(apartment_slug="suite-life",
+#                                  apartment_name="The Suites Life",
+#                                  address=Address.objects.create(address1="770 S 4th St", zip_code="61020",
+#                                                                 city="Champaign", lat=Decimal(40.2),
+#                                                                 long=Decimal(-88.236)),
+#                                  min_cost=714,
+#                                  max_cost=899,
+#                                  website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
+#                                  )
+        
+#         b1 = ImportantBuilding.objects.create(building_slug="test",
+#                                               building_name="The test",
+#                                               address=Address.objects.create(address1="773 S 3rd St", zip_code="61020",
+#                                                                              city="Champaign", lat=Decimal(40.101),
+#                                                                              long=Decimal(-88.235970)))
+#         b2 = ImportantBuilding.objects.create(building_slug="test2",
+#                                               building_name="The test 2",
+#                                               address=Address.objects.create(address1="775 S 3rd St", zip_code="61020",
+#                                                                              city="Champaign", lat=Decimal(40.202),
+#                                                                              long=Decimal(-88.235970)))
+        
+#         b3 = ImportantBuilding.objects.create(building_slug="test3",
+#                                               building_name="The test 3",
+#                                               address=Address.objects.create(address1="310 Green St", zip_code="61020",
+#                                                                 city="Champaign", lat=Decimal(40.11),
+#                                                                 long=Decimal(-88.247940)))
+#         b4 = ImportantBuilding.objects.create(building_slug="test4",
+#                                               building_name="The test 4",
+#                                               address=Address.objects.create(address1="341 Green St", zip_code="61020",
+#                                                                 city="Champaign", lat=Decimal(40.13),
+#                                                                 long=Decimal(-88.247940)))
+        
+#         u1 = University.objects.create(id=0, university_slug="UIUC", name="UIUC", address=Address.objects.create(address1="1401 W Green St", zip_code="61020",
+#                                                                              city="Champaign", lat=Decimal(40.101987),
+#                                                                              long=Decimal(-88.227157)))
+        
+#         u1.apartments.add(a1)
+#         u1.apartments.add(a2)
+#         u1.apartments.add(a3)
+#         u1.apartments.add(a4)
+#         u1.important_buildings.add(b1)
+#         u1.important_buildings.add(b2)
+#         u1.save()
 
-class NearestApartmentsTest(APITestCase):
-    def setUp(self):
-        Apartment.objects.create(apartment_slug="309",
-                                 apartment_name="309 Green",
-                                 address=Address.objects.create(address1="309 Green St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.109880),
-                                                                long=Decimal(-88.247940)),
-                                 min_cost=800,
-                                 max_cost=1000,
-                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
-                                 )
-        Apartment.objects.create(apartment_slug="308",
-                                 apartment_name="308 Green",
-                                 address=Address.objects.create(address1="308 Green St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.12),
-                                                                long=Decimal(-88.247940)),
-                                 min_cost=800,
-                                 max_cost=1000,
-                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
-                                 )
-        Apartment.objects.create(apartment_slug="Suites",
-                                 apartment_name="The Suites at Third",
-                                 address=Address.objects.create(address1="705 S 3rd St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.109370),
-                                                                long=Decimal(-88.235970)),
-                                 min_cost=714,
-                                 max_cost=899,
-                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
-                                 )
-        Apartment.objects.create(apartment_slug="the-suite",
-                                 apartment_name="The Suites",
-                                 address=Address.objects.create(address1="770 S 3rd St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.2),
-                                                                long=Decimal(-88.235970)),
-                                 min_cost=714,
-                                 max_cost=899,
-                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
-                                 )
-        Apartment.objects.create(apartment_slug="suite-life",
-                                 apartment_name="The Suites Life",
-                                 address=Address.objects.create(address1="770 S 4th St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.2),
-                                                                long=Decimal(-88.236)),
-                                 min_cost=714,
-                                 max_cost=899,
-                                 website_url="https://www.americancampus.com/student-apartments/il/champaign/the-suites-at-3rd"
-                                 )
+        
 
-    def test_get_nearest_apartments(self):
-        """
-        Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
-        Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
-        and then we use the and operator in set notation to see buildings near the important buildings
+#     def test_get_nearest_apartments(self):
+#         """
+#         Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
+#         Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
+#         and then we use the and operator in set notation to see buildings near the important buildings
 
-        :return:
-        """
-        b1 = ImportantBuilding.objects.create(building_slug="test",
-                                              building_name="The test",
-                                              address=Address.objects.create(address1="773 S 3rd St", zip_code="61020",
-                                                                             city="Champaign", lat=Decimal(40.201),
-                                                                             long=Decimal(-88.235970)))
-        b2 = ImportantBuilding.objects.create(building_slug="test2",
-                                              building_name="The test 2",
-                                              address=Address.objects.create(address1="775 S 3rd St", zip_code="61020",
-                                                                             city="Champaign", lat=Decimal(40.202),
-                                                                             long=Decimal(-88.235970)))
-        building_slugs = ['test','test2']
-        starting_index = 0
-        ending_index = 4
-        print("Check nearest apartments 1")
-        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
-        response = self.client.get(url, format='json')
-        data = json.loads(response.content)
-        print("data: ", data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data[0]['apartment_slug'], "the-suite")
-        self.assertEqual(data[1]['apartment_slug'], "suite-life")
-        self.assertEqual(len(data), 2)
-        # Nearest apartment to both of these buildings is the-suite and suite-life at the moment
+#         :return:
+#         """
+        
+#         building_slugs = ['test','test2']
+#         starting_index = 0
+#         ending_index = 4
+#         print("Check nearest apartments 1")
+#         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
+#         response = self.client.get(url, format='json')
+#         data = json.loads(response.content)
+#         print("data for nearest apartments 1: ", data)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(data[0]['apartment_slug'], "the-suite")
+#         self.assertEqual(data[1]['apartment_slug'], "suite-life")
+#         self.assertEqual(len(data), 2)
+#         # Nearest apartment to both of these buildings is the-suite and suite-life at the moment
 
-    def test_get_nearest_apartments_two(self):
-        """
-        Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
-        Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
-        and then we use the and operator in set notation to see buildings near the important buildings
+#     def test_get_nearest_apartments_two(self):
+#         """
+#         Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
+#         Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
+#         and then we use the and operator in set notation to see buildings near the important buildings
 
-        In this case though, we are checking if some of the apartments near one important building is not near another important building and returns the number of important buildings near both
+#         In this case though, we are checking if some of the apartments near one important building is not near another important building and returns the number of important buildings near both
 
-        :return:
-        """
-        b1 = ImportantBuilding.objects.create(building_slug="test",
-                                              building_name="The test",
-                                              address=Address.objects.create(address1="310 Green St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.11),
-                                                                long=Decimal(-88.247940)))
-        b2 = ImportantBuilding.objects.create(building_slug="test2",
-                                              building_name="The test 2",
-                                              address=Address.objects.create(address1="341 Green St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.13),
-                                                                long=Decimal(-88.247940)))
-        building_slugs = ['test','test2']
-        starting_index = 0
-        ending_index = 2
-        print("Check nearest apartments 2")
-        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
-        response = self.client.get(url, format='json')
-        data = json.loads(response.content)
-        print(data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(data),0)
-        # No nearest apartments within 1 mile of these two buildings as 308, although less than 1 mile via haversine, is more than 1 mile actual walking distance
+#         :return:
+#         """
 
-    def test_get_nearest_apartments_three(self):
-        """
-        Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
-        Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
-        and then we use the and operator in set notation to see buildings near the important buildings
+#         building_slugs = ['test3','test4']
+#         starting_index = 0
+#         ending_index = 2
+#         print("Check nearest apartments 2")
+#         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1"
+#         response = self.client.get(url, format='json')
+#         data = json.loads(response.content)
+#         print("data = ", data)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(len(data),0)
+#         # No nearest apartments within 1 mile of these two buildings as 308, although less than 1 mile via haversine, is more than 1 mile actual walking distance
 
-        In this case though, we are checking if some of the apartments near one important building is not near another important building and returns the number of important buildings near both
+#     def test_get_nearest_apartments_three(self):
+#         """
+#         Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
+#         Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
+#         and then we use the and operator in set notation to see buildings near the important buildings
 
-        :return:
-        """
-        b1 = ImportantBuilding.objects.create(building_slug="test",
-                                              building_name="The test",
-                                              address=Address.objects.create(address1="310 Green St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.11),
-                                                                long=Decimal(-88.247940)))
-        b2 = ImportantBuilding.objects.create(building_slug="test2",
-                                              building_name="The test 2",
-                                              address=Address.objects.create(address1="341 Green St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.13),
-                                                                long=Decimal(-88.247940)))
-        building_slugs = ['test','test2']
-        starting_index = 0
-        ending_index = 2
-        print("Check nearest apartments 2")
-        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1.25"
-        response = self.client.get(url, format='json')
-        data = json.loads(response.content)
-        print(data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data[0]['apartment_slug'], "308")
-        self.assertEqual(len(data),1)
-        # Apartments within 1.25 miles of these two buildings is 308
+#         In this case though, we are checking if some of the apartments near one important building is not near another important building and returns the number of important buildings near both
 
-    def test_get_nearest_apartments_biking(self):
-        """
+#         :return:
+#         """
+#         building_slugs = ['test3','test4']
+#         starting_index = 0
+#         ending_index = 2
+#         print("Check nearest apartments 3")
+#         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1.25"
+#         response = self.client.get(url, format='json')
+#         data = json.loads(response.content)
+#         print("data = ", data)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(data[0]['apartment_slug'], "308")
+#         self.assertEqual(len(data),1)
+#         # Apartments within 1.25 miles of these two buildings is 308
 
-        :return:
-        """
-        b1 = ImportantBuilding.objects.create(building_slug="test",
-                                              building_name="The test",
-                                              address=Address.objects.create(address1="310 Green St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.11),
-                                                                long=Decimal(-88.247940)))
-        b2 = ImportantBuilding.objects.create(building_slug="test2",
-                                              building_name="The test 2",
-                                              address=Address.objects.create(address1="341 Green St", zip_code="61020",
-                                                                city="Champaign", lat=Decimal(40.13),
-                                                                long=Decimal(-88.247940)))
-        building_slugs = ['test','test2']
-        starting_index = 0
-        ending_index = 2
-        print("Check nearest apartments 2")
-        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1.25"
-        response = self.client.get(url, format='json')
-        data = json.loads(response.content)
-        print(data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(data),0)
-        # No apartments within 1.25 miles biking distance
+#     def test_get_nearest_apartments_biking(self):
+#         """
 
-    def test_get_nearest_apartments_biking_two(self):
-        """
-        Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
-        Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
-        and then we use the and operator in set notation to see buildings near the important buildings
+#         :return:
+#         """
 
-        :return:
-        """
-        b1 = ImportantBuilding.objects.create(building_slug="test",
-                                              building_name="The test",
-                                              address=Address.objects.create(address1="773 S 3rd St", zip_code="61020",
-                                                                             city="Champaign", lat=Decimal(40.201),
-                                                                             long=Decimal(-88.235970)))
-        b2 = ImportantBuilding.objects.create(building_slug="test2",
-                                              building_name="The test 2",
-                                              address=Address.objects.create(address1="775 S 3rd St", zip_code="61020",
-                                                                             city="Champaign", lat=Decimal(40.202),
-                                                                             long=Decimal(-88.235970)))
-        building_slugs = ['test','test2']
-        starting_index = 0
-        ending_index = 4
-        print("Check nearest apartments 1")
-        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1"
-        response = self.client.get(url, format='json')
-        data = json.loads(response.content)
-        print("data: ", data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data[0]['apartment_slug'], "the-suite")
-        self.assertEqual(data[1]['apartment_slug'], "suite-life")
-        self.assertEqual(len(data), 2)
-        # Nearest apartment to both of these buildings is the-suite and suite-life at the moment
+#         building_slugs = ['test','test2']
+#         starting_index = 0
+#         ending_index = 2
+#         print("Check nearest apartments 4")
+#         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1.25"
+#         response = self.client.get(url, format='json')
+#         data = json.loads(response.content)
+#         print("data = ", data)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(len(data),0)
+#         # No apartments within 1.25 miles biking distance
+
+#     def test_get_nearest_apartments_biking_two(self):
+#         """
+#         Create two important buildings near some of the apartments and then tests the nearest apartments to the buildings.
+#         Here we are using sets to store the important buildings and creating those sets by checking whether the distance between the apartments and the important buildings is less than a mile,
+#         and then we use the and operator in set notation to see buildings near the important buildings
+
+#         :return:
+#         """
+
+#         building_slugs = ['test3','test4']
+#         starting_index = 0
+#         ending_index = 4
+#         print("Check nearest apartments 5")
+#         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=1"
+#         response = self.client.get(url, format='json')
+#         data = json.loads(response.content)
+#         print("data: ", data)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(data[0]['apartment_slug'], "the-suite")
+#         self.assertEqual(data[1]['apartment_slug'], "suite-life")
+#         self.assertEqual(len(data), 2)
+#         # Nearest apartment to both of these buildings is the-suite and suite-life at the moment
 
 class NearestApartmentsTestTwo(APITestCase):
-    def setUp(self):
-        Apartment.objects.create(apartment_slug="207",
+    @classmethod
+    def setUpTestData(cls):
+        a1 = Apartment.objects.create(apartment_slug="207",
                                  apartment_name="207 S Fifth Street",
                                  address=Address.objects.create(address1="207 S Fifth St", zip_code="61820",
                                                                 city="Champaign", lat=Decimal(40.114705328876),
@@ -847,7 +929,7 @@ class NearestApartmentsTestTwo(APITestCase):
                                  website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
                                  )
 
-        Apartment.objects.create(apartment_slug="suites-at-third",
+        a2 = Apartment.objects.create(apartment_slug="suites-at-third",
                                  apartment_name="Suites at Third",
                                  address=Address.objects.create(address1="707 S 3rd Street", zip_code="61820",
                                                                 city="Champaign", lat=Decimal(40.1095247183999),
@@ -856,14 +938,14 @@ class NearestApartmentsTestTwo(APITestCase):
                                  max_cost=800,
                                  website_url="https://www.americancampus.com/student-apartments/il/champaign/309-green"
                                  )
+        
+        u = University.objects.create(id=0, university_slug="UIUC", name="UIUC", address=Address.objects.create(address1="1401 W Green St", zip_code="61020",
+                                                                             city="Champaign", lat=Decimal(40.101987),
+                                                                             long=Decimal(-88.227157)))
 
-    def test_get_nearest_apartments_walk(self):
-        """
-        Walking distance of 1 mile from one important building
-
-        :return:
-        """
-        ImportantBuilding.objects.create(building_slug="siebel",
+        u.apartments.add(a1)
+        u.apartments.add(a2)
+        i1 = ImportantBuilding.objects.create(building_slug="siebel",
                                               building_name="Siebel Center for Computer Science",
                                               address=Address.objects.create(address1="201 N Goodwin Ave",
                                                zip_code="61801", 
@@ -871,6 +953,26 @@ class NearestApartmentsTestTwo(APITestCase):
                                                lat=Decimal('40.11397506604104'),
                                long=Decimal('-88.2249588393126')))
 
+        i2 = ImportantBuilding.objects.create(building_slug="arc",
+                                              building_name="ARC",
+                                              address=Address.objects.create(address1="201 E Peabody Dr", 
+                                              zip_code="61820",
+                                               city="Champaign", 
+                                               lat=Decimal('40.10201506403509'),
+                                               long=Decimal('-88.2361043315809')))
+        
+        u.important_buildings.add(i1)
+        u.important_buildings.add(i2)
+        u.save()
+        
+
+    def test_get_nearest_apartments_walk(self):
+        """
+        Walking distance of 1 mile from one important building
+
+        :return:
+        """
+    
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
@@ -890,13 +992,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
 
         building_slugs = ['siebel']
         starting_index = 0
@@ -916,13 +1011,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
 
         building_slugs = ['siebel']
         starting_index = 0
@@ -942,14 +1030,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
@@ -967,21 +1047,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
@@ -1001,21 +1066,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
@@ -1035,21 +1085,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
@@ -1060,7 +1095,7 @@ class NearestApartmentsTestTwo(APITestCase):
         print("data: ", data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(data), 0)
-        # Only suites-at-third within 1 mile walking dist from both Siebel and ARC
+        # No apartment within 0.5 miles from both siebel and arc
 
     def test_get_nearest_apartments_bike_one(self):
         """
@@ -1068,13 +1103,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
 
         building_slugs = ['siebel']
         starting_index = 0
@@ -1096,13 +1124,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
 
         building_slugs = ['siebel']
         starting_index = 0
@@ -1123,13 +1144,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
 
         building_slugs = ['siebel']
         starting_index = 0
@@ -1149,21 +1163,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
@@ -1185,21 +1184,6 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
@@ -1220,26 +1204,11 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments bike 6")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minBikingDist=0.5"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1256,18 +1225,11 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
 
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments drive 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=1"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1280,23 +1242,16 @@ class NearestApartmentsTestTwo(APITestCase):
 
     def test_get_nearest_apartments_drive_two(self):
         """
-        Driving distance of 0.5 miles from one important building
+        Driving distance of 0.8 miles from one important building
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
 
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
-        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=0.5"
+        print("Check nearest apartments drive 2")
+        url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=0.8"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
         print("data: ", data)
@@ -1311,18 +1266,11 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
 
         building_slugs = ['siebel']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments drive 3")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=0.4"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1337,26 +1285,11 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments drive 4")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=2"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1373,26 +1306,11 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments drive 5")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=1"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1408,26 +1326,11 @@ class NearestApartmentsTestTwo(APITestCase):
 
         :return:
         """
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments drive 6")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minDrivingDist=0.5"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1437,26 +1340,11 @@ class NearestApartmentsTestTwo(APITestCase):
         # No apartment within 0.5 miles from both
 
     def test_get_nearest_apartments_walk_bike_one(self):
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments walk and bike 1")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1&minBikingDist=2"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1468,26 +1356,11 @@ class NearestApartmentsTestTwo(APITestCase):
         # Both apartments either within one mile walk or two mile bike from siebel or ARC
 
     def test_get_nearest_apartments_walk_bike_two(self):
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments walk and bike 2 ")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1&minBikingDist=1.5"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1499,26 +1372,11 @@ class NearestApartmentsTestTwo(APITestCase):
         # Both apartments either within one mile walk or 1.5 mile bike from siebel or ARC
 
     def test_get_nearest_apartments_walk_bike_three(self):
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments walk and bike 3")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1&minBikingDist=1"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1529,26 +1387,11 @@ class NearestApartmentsTestTwo(APITestCase):
         # Only Suites within one mile walk or 1 mile bike from siebel and ARC
 
     def test_get_nearest_apartments_walk_bike_drive_one(self):
-        ImportantBuilding.objects.create(building_slug="siebel",
-                                              building_name="Siebel Center for Computer Science",
-                                              address=Address.objects.create(address1="201 N Goodwin Ave",
-                                               zip_code="61801", 
-                                               city="Urbana", 
-                                               lat=Decimal('40.11397506604104'),
-                               long=Decimal('-88.2249588393126')))
-
-        ImportantBuilding.objects.create(building_slug="arc",
-                                              building_name="ARC",
-                                              address=Address.objects.create(address1="201 E Peabody Dr", 
-                                              zip_code="61820",
-                                               city="Champaign", 
-                                               lat=Decimal('40.10201506403509'),
-                                               long=Decimal('-88.2361043315809')))
 
         building_slugs = ['siebel', 'arc']
         starting_index = 0
         ending_index = 4
-        print("Check nearest apartments 1")
+        print("Check nearest apartments walk bike and drive ")
         url = f"/api/get_nearest_apartments?buildingSlugs={json.dumps(building_slugs)}&starting_index={starting_index}&ending_index={ending_index}&universitySlug=UIUC&minWalkingDist=1&minBikingDist=1&minDrivingDist=2"
         response = self.client.get(url, format='json')
         data = json.loads(response.content)
@@ -1557,7 +1400,6 @@ class NearestApartmentsTestTwo(APITestCase):
         self.assertEqual(data[0]['apartment_slug'], "207")
         self.assertEqual(data[1]['apartment_slug'], "suites-at-third")
         self.assertEqual(len(data), 2)
-        # Only Suites within one mile walk or 1 mile bike from siebel and ARC
 
 
 class TestDistances(TestCase):
